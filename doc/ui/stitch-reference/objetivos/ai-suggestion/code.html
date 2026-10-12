@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+
+<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"surface-container-high":"#dde9ff","on-secondary":"#ffffff","primary-fixed-dim":"#a0c9ff","error":"#ba1a1a","primary-container":"#0f4c81","on-secondary-fixed":"#111c2d","surface":"#f8f9ff","inverse-primary":"#a0c9ff","background":"#f8f9ff","surface-container-highest":"#d5e3fd","on-tertiary-fixed-variant":"#004b73","on-primary-fixed":"#001c37","secondary":"#545f73","outline-variant":"#c2c7d1","secondary-fixed":"#d8e3fb","surface-container-low":"#eff4ff","on-secondary-fixed-variant":"#3c475a","inverse-surface":"#233144","on-primary":"#ffffff","tertiary-container":"#004e78","error-container":"#ffdad6","on-background":"#0d1c2f","on-primary-fixed-variant":"#07497d","on-surface-variant":"#42474f","secondary-fixed-dim":"#bcc7de","surface-container":"#e6eeff","surface-tint":"#2d6197","on-error":"#ffffff","tertiary-fixed-dim":"#93ccff","surface-container-lowest":"#ffffff","inverse-on-surface":"#ebf1ff","surface-bright":"#f8f9ff","on-tertiary-fixed":"#001d31","surface-dim":"#ccdbf4","on-tertiary-container":"#74c1ff","on-secondary-container":"#586377","primary-fixed":"#d2e4ff","on-tertiary":"#ffffff","surface-variant":"#d5e3fd","on-error-container":"#93000a","on-primary-container":"#8ebdf9","primary":"#00355f","tertiary":"#003756","outline":"#727780","secondary-container":"#d5e0f8","tertiary-fixed":"#cce5ff","on-surface":"#0d1c2f"},borderRadius:{DEFAULT:"0.125rem",lg:"0.25rem",xl:"0.5rem",full:"0.75rem"},spacing:{"gutter-sm":"0.75rem","space-xs":"0.25rem","margin-mobile":"1rem","margin":"2rem","space-lg":"1.5rem","space-sm":"0.5rem","gutter":"1.5rem","space-md":"1rem","space-xl":"2rem"},fontFamily:{"headline-sm":["Inter"],"display-hero":["Inter"],"headline-md":["Inter"],"body-md":["Inter"],"label-md":["Inter"],"body-lg":["Inter"],"label-micro":["Inter"],"headline-lg":["Inter"],"body-sm":["Inter"],"code-snippet":["JetBrains Mono"]},fontSize:{"headline-sm":["16px",{lineHeight:"24px",fontWeight:"600"}],"display-hero":["32px",{lineHeight:"40px",fontWeight:"700"}],"headline-md":["20px",{lineHeight:"28px",fontWeight:"600"}],"body-md":["14px",{lineHeight:"20px",fontWeight:"400"}],"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.025em",fontWeight:"600"}],"body-lg":["16px",{lineHeight:"24px",fontWeight:"400"}],"label-micro":["11px",{lineHeight:"14px",letterSpacing:"0.05em",fontWeight:"700"}],"headline-lg":["24px",{lineHeight:"32px",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"code-snippet":["12px",{lineHeight:"16px",fontWeight:"400"}]}}}};</script></head><body class="bg-surface font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-[260px] bg-surface-container-lowest z-50 flex flex-col shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-space-md flex items-center gap-space-sm bg-surface-container-low"><img alt="Gestor de Requerimientos Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1XaOYLt1VJHsaSEkwQs7OI6Xxu7cMm8hMZrF6UJc0cLe8nUWC79XXWszbUDVPcYivGfhU8ACWiFbADCTb04KaOHQosf0TDFf7-0U_yYp2UNOc344t0AESF20GOaGX4GeU12YV3aoX2UJUjndr-xxduE8UrHOFTZnBmRAy0TE2Kggb7MoMg-hIdkyOsjA6Q_r_k9gIPedqzE_zECnScEkMJ8U7Ma6F4CFeY4-WmaQwxHypGrGZBn3IwnwiuJ"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-primary leading-tight tracking-tight">SRS Portal</span><span class="font-label-micro text-label-micro text-secondary uppercase">Gobierno de TI</span></div></div><div class="px-space-md py-space-sm"><span class="font-label-micro text-label-micro text-secondary uppercase tracking-wider">Navegación Principal</span></div><nav class="flex-1 px-space-sm space-y-1 overflow-y-auto" data-active-classes="bg-primary-container text-on-primary font-headline-sm"><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="requerimientos" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-base">fact_check</span><span class="font-body-md text-body-md">Requerimientos</span></div><span class="bg-secondary-container text-on-secondary-fixed font-label-micro text-label-micro px-2 py-0.5 rounded-full">18</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="nuevo-requerimiento" href="#"><span class="material-symbols-outlined text-base">playlist_add</span><span class="font-body-md text-body-md">Nuevo Requerimiento</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="plantillas-ers-srs" href="#"><span class="material-symbols-outlined text-base">description</span><span class="font-body-md text-body-md">Plantillas ERS / SRS</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="repositorio-documental" href="#"><span class="material-symbols-outlined text-base">folder_shared</span><span class="font-body-md text-body-md">Repositorio Documental</span></a><a class="flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="configuracion-y-catalogos" href="#"><span class="material-symbols-outlined text-base">tune</span><span class="font-body-md text-body-md">Configuración y Catálogos</span></a></nav><div class="p-space-md bg-surface-container-low flex flex-col gap-space-xs"><a class="flex items-center gap-space-xs text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors" data-path="guia-ers" href="#"><span class="material-symbols-outlined text-sm">menu_book</span>Guía de Especificación ERS</a><div class="flex items-center justify-between pt-space-xs font-code-snippet text-code-snippet text-secondary"><span>Versión</span><span class="font-label-micro text-label-micro bg-surface-container px-1.5 py-0.5 rounded">v2.4.0 (BS5 + TS)</span></div></div></aside><div class="pl-[260px]"><header class="fixed top-0 left-[260px] right-0 h-16 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 px-space-lg flex items-center justify-between"><div class="flex items-center gap-space-md flex-1 max-w-lg"><div class="relative w-full flex items-center"><span class="material-symbols-outlined absolute left-3 text-secondary text-base pointer-events-none">search</span><input class="w-full h-10 pl-9 pr-space-md rounded-lg bg-surface-container-lowest text-on-surface font-body-sm text-body-sm placeholder:text-outline focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Buscar por ID (RF-01), módulo o palabra clave..." type="text"/></div><span class="font-label-micro text-label-micro px-2.5 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant whitespace-nowrap uppercase tracking-wider font-semibold">PRODUCCIÓN / TI</span></div><div class="flex items-center gap-space-lg"><button class="relative text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container-high transition-colors" type="button"><span class="material-symbols-outlined">notifications</span><span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-error"></span></button><div class="flex items-center gap-space-sm pl-space-sm bg-surface-container-low py-1 px-space-md rounded-lg"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQiAAQ6Zi9jaT1dh0_vqoMbBGMFK3xqAOyNT4hdnOK20VwkHoezFiY-AcFkZRY-rPRrRqknCgH67t8opO3WA648nVUoA1WJj0rHTHIJewKJJjcbp_5Nutve5ZAoekUNxuXvxjIRAvU8bTpPUk0jMwjkw82JDKrdqxJ6XPdCZgjOUOXFMxD45cNyPJrG-aeAJqpxVOvfiY5-Z4x648xLTqmXEdDS8OQDalMWwjVONMJIMv4KlXESDL7jA"/><div class="flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Ing. Sofia Morales</span><span class="font-label-micro text-label-micro text-secondary leading-tight">Analista Sr. • Dirección de TI</span></div></div></div></header><main class="relative pt-16 bg-surface min-h-screen w-full px-space-lg py-space-lg"><div class="flex flex-col w-full">
+<!-- Dynamic Notification / Context Banner -->
+<div class="mb-space-md flex flex-wrap items-center justify-between gap-space-sm rounded-lg bg-surface-container-low px-space-md py-space-xs text-on-surface shadow-sm">
+<div class="flex items-center gap-space-sm">
+<span class="inline-flex h-2 w-2 rounded-full bg-surface-tint animate-pulse"></span>
+<span class="font-label-micro text-label-micro text-secondary uppercase tracking-widest">EXPEDIENTE ERS-2025-089</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-medium">Módulo de Conciliaciones Bancarias y Pagos Automatizados</span>
+</div>
+<div class="flex items-center gap-space-sm font-code-snippet text-code-snippet text-secondary">
+<span class="bg-surface-container px-2 py-0.5 rounded">MODO AUDITABLE</span>
+<span>Última sincronización: 14:32:09</span>
+</div>
+</div>
+<!-- Wizard Layout: 12 Columns (3 Stepper | 9 Workspace & Cognitive Assistant) -->
+<div class="grid grid-cols-12 gap-gutter items-start">
+<!-- LEFT COLUMN: Sticky Vertical Wizard Stepper (Cols 1-3) -->
+<aside class="col-span-12 lg:col-span-3 sticky top-20 bg-surface-container-lowest rounded-xl shadow-sm p-space-md">
+<div class="flex items-center justify-between pb-space-sm mb-space-sm">
+<span class="font-label-micro text-label-micro text-secondary uppercase tracking-wider">Flujo de Elaboración</span>
+<span class="font-label-micro text-label-micro text-primary font-bold bg-primary-fixed px-2 py-0.5 rounded-full">Paso 3 de 13</span>
+</div>
+<!-- Linear progress indicator -->
+<div class="w-full bg-surface-container h-1 rounded-full mb-space-md overflow-hidden">
+<div class="bg-primary-container h-full transition-all duration-300" style="width: 23%;"></div>
+</div>
+<nav aria-label="Progreso del asistente ERS" class="space-y-space-xs relative">
+<!-- Connecting Vertical Rail Track -->
+<div class="absolute left-[13px] top-3 bottom-3 w-[2px] bg-surface-container z-0 pointer-events-none"></div>
+<!-- Step 1: Completed -->
+<div class="relative z-10 flex items-start gap-space-sm p-space-xs rounded-lg hover:bg-surface-container-low transition-colors">
+<div class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-600 text-on-primary flex items-center justify-center font-label-micro text-label-micro">
+<span class="material-symbols-outlined text-[15px]">check</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-micro text-label-micro text-secondary uppercase">Paso 01</span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface truncate">Metadatos del Proyecto</span>
+</div>
+</div>
+<!-- Step 2: Completed -->
+<div class="relative z-10 flex items-start gap-space-sm p-space-xs rounded-lg hover:bg-surface-container-low transition-colors">
+<div class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-600 text-on-primary flex items-center justify-center font-label-micro text-label-micro">
+<span class="material-symbols-outlined text-[15px]">check</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-micro text-label-micro text-secondary uppercase">Paso 02</span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface truncate">Alcance y Restricciones</span>
+</div>
+</div>
+<!-- Step 3: Active Step -->
+<div class="relative z-10 flex items-start gap-space-sm p-space-xs rounded-lg bg-surface-container-high transition-colors">
+<div class="flex-shrink-0 w-7 h-7 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-headline-sm text-headline-sm shadow-sm">
+            3
+          </div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-micro text-label-micro text-primary font-bold uppercase">Paso Activo</span>
+<span class="font-headline-sm text-headline-sm text-primary leading-tight">Objetivos Generales (IEEE 830)</span>
+<span class="font-label-micro text-label-micro text-secondary mt-0.5">2 creados • 1 sugerencia IA</span>
+</div>
+</div>
+<!-- Step 4: Pending -->
+<div class="relative z-10 flex items-start gap-space-sm p-space-xs rounded-lg opacity-70">
+<div class="flex-shrink-0 w-7 h-7 rounded-full bg-surface-container text-secondary flex items-center justify-center font-body-sm text-body-sm">
+            4
+          </div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-micro text-label-micro text-secondary uppercase">Paso 04</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Consideraciones &amp; Beneficios</span>
+</div>
+</div>
+<!-- Step 5: Pending -->
+<div class="relative z-10 flex items-start gap-space-sm p-space-xs rounded-lg opacity-60">
+<div class="flex-shrink-0 w-7 h-7 rounded-full bg-surface-container text-secondary flex items-center justify-center font-body-sm text-body-sm">
+            5
+          </div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-micro text-label-micro text-secondary uppercase">Paso 05</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Requerimientos Funcionales</span>
+</div>
+</div>
+<!-- Step 6: Pending -->
+<div class="relative z-10 flex items-start gap-space-sm p-space-xs rounded-lg opacity-50">
+<div class="flex-shrink-0 w-7 h-7 rounded-full bg-surface-container text-secondary flex items-center justify-center font-body-sm text-body-sm">
+            6
+          </div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-micro text-label-micro text-secondary uppercase">Paso 06</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Requerimientos No Funcionales</span>
+</div>
+</div>
+<!-- Collapsed steps footer -->
+<div class="pt-space-xs px-space-xs flex items-center justify-between text-secondary">
+<span class="font-label-micro text-label-micro">Pasos 7 al 13 pendientes</span>
+<span class="material-symbols-outlined text-sm">unfold_more</span>
+</div>
+</nav>
+<!-- Stepper Quick Health Card -->
+<div class="mt-space-md p-space-sm bg-surface-container-low rounded-lg flex flex-col gap-space-xs">
+<span class="font-label-micro text-label-micro text-secondary uppercase font-semibold">Trazabilidad Técnica</span>
+<div class="flex items-center justify-between font-body-sm text-body-sm text-on-surface">
+<span>Estándar</span>
+<span class="font-code-snippet text-code-snippet bg-surface-container-highest px-1.5 py-0.5 rounded text-primary">IEEE Std 830-1998</span>
+</div>
+<div class="flex items-center justify-between font-body-sm text-body-sm text-on-surface">
+<span>Verificabilidad</span>
+<span class="font-headline-sm text-headline-sm text-emerald-700">100% Cuantificable</span>
+</div>
+</div>
+</aside>
+<!-- RIGHT / MAIN WORKSPACE: Step 3 Contents & AI Suggestion Panel (Cols 4-12) -->
+<section class="col-span-12 lg:col-span-9 flex flex-col gap-space-md">
+<!-- STEP HEADER WITH COGNITIVE ACTIVE BADGE -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div>
+<div class="flex items-center gap-space-xs text-secondary font-label-micro text-label-micro uppercase mb-1">
+<span>Sección 3.0</span>
+<span>•</span>
+<span>Especificación de Requerimientos de Software</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight">
+            3. Objetivos Generales y Matriz de Verificabilidad (IEEE 830)
+          </h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 max-w-2xl">
+            Establezca las metas cuantitativas y verificables que debe alcanzar la solución tecnológica. Cada objetivo debe poseer verbo rector, métrica de aceptación y umbral temporal medible.
+          </p>
+</div>
+<!-- Cognitive Assistant Active Badge -->
+<div class="flex-shrink-0 self-start md:self-center">
+<div class="flex items-center gap-space-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-surface-container-high via-surface-container to-secondary-container shadow-sm">
+<span class="material-symbols-outlined text-primary text-[18px] animate-spin" style="animation-duration: 6s;">smart_toy</span>
+<div class="flex flex-col">
+<span class="font-label-micro text-label-micro text-primary uppercase font-bold tracking-wide">Asistente Cognitivo ERS</span>
+<span class="font-label-micro text-label-micro text-secondary leading-none">Activo en tiempo real</span>
+</div>
+<span class="w-2 h-2 rounded-full bg-emerald-500 ml-1"></span>
+</div>
+</div>
+</div>
+<!-- MAIN FOCUS: AiSuggestionPanel COGNITIVO ACTIVO (Estado 5) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-md overflow-hidden transition-all duration-300" id="aiSuggestionPanel">
+<!-- Panel Accent Top Banner -->
+<div class="h-1.5 w-full bg-gradient-to-r from-primary via-primary-container to-surface-tint"></div>
+<!-- Panel Header -->
+<div class="p-space-lg bg-surface-container-low flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-2xl">neurology</span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<h2 class="font-headline-md text-headline-md text-primary font-bold">
+                  Copiloto ERS • Asistencia Cognitiva para Formulación de Objetivos
+                </h2>
+</div>
+<p class="font-body-sm text-body-sm text-secondary">
+                Detección heurística de ambigüedad en el borrador redactado. Sugerencia normalizada para auditoría IEEE 830.
+              </p>
+</div>
+</div>
+<!-- Algorithmic Confidence & Model Tags -->
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="font-label-micro text-label-micro px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 font-bold uppercase tracking-wider flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[14px]">verified</span>
+              CONFIDENCE: 98.4%
+            </span>
+<span class="font-code-snippet text-code-snippet px-2 py-1 rounded bg-surface-container-highest text-primary font-semibold">
+              MODELO ACTIVO: ERS-COPILOT-V2 / IEEE 830 COMPATIBLE
+            </span>
+</div>
+</div>
+<!-- Comparative Container: 2 Parallel Columns -->
+<div class="p-space-lg">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-lg">
+<!-- Left Column: Original User Draft (Sub-optimal) -->
+<div class="flex flex-col bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-xs mb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-base">edit_note</span>
+<span class="font-label-micro text-label-micro text-secondary uppercase font-bold tracking-wider">OBJETIVO REDACTADO POR USUARIO</span>
+</div>
+<span class="font-label-micro text-label-micro px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-semibold">
+                  Calidad: Informal / Impreciso
+                </span>
+</div>
+<!-- Quote Block -->
+<div class="bg-surface-container-low rounded-lg p-space-md my-space-xs shadow-inner">
+<p class="font-headline-sm text-headline-sm text-on-surface italic leading-relaxed">
+                  “Queremos que concilie rápido y sin errores.”
+                </p>
+</div>
+<!-- Detected Deficit Checklist -->
+<div class="mt-space-sm pt-space-xs">
+<span class="font-label-micro text-label-micro text-secondary uppercase tracking-wider block mb-space-xs font-semibold">
+                  Déficits Metodológicos Identificados:
+                </span>
+<ul class="space-y-space-xs font-body-sm text-body-sm text-error">
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-base flex-shrink-0">close</span>
+<span>Sin métrica numérica de tiempo ("rápido" es ambiguo para pruebas de aceptación ERS).</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-base flex-shrink-0">close</span>
+<span>Sin verbo de acción formal en infinitivo que determine el comportamiento del sistema.</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-base flex-shrink-0">close</span>
+<span>Ausencia de condiciones de contorno o volumetría transaccional sujeta a verificación.</span>
+</li>
+</ul>
+</div>
+</div>
+<!-- Right Column: AI Optimized Technical Proposal -->
+<div class="flex flex-col bg-surface-container-low rounded-xl p-space-md shadow-md relative overflow-hidden">
+<!-- Visual highlight pill -->
+<div class="flex items-center justify-between pb-space-xs mb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-base">auto_fix_high</span>
+<span class="font-label-micro text-label-micro text-primary uppercase font-bold tracking-wider">PROPUESTA TÉCNICA OPTIMIZADA POR IA</span>
+</div>
+<span class="font-label-micro text-label-micro px-2.5 py-0.5 rounded-full bg-emerald-700 text-on-primary font-bold uppercase tracking-wider shadow-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">task_alt</span>
+                  IEEE 830 Compatible
+                </span>
+</div>
+<!-- Highlighted Optimized Proposal Box -->
+<div class="bg-surface-container-lowest rounded-lg p-space-md my-space-xs shadow-sm">
+<p class="font-body-lg text-body-lg text-on-surface font-semibold leading-relaxed" id="optimizedText">
+                  “Automatizar el proceso de cotejo de 4 extractos bancarios diarios mediante algoritmo de dispersión tolerante a fallas, garantizando un índice de coincidencia no menor al <span class="bg-surface-container-high text-primary px-1 rounded">99.2%</span> antes de las <span class="bg-surface-container-high text-primary px-1 rounded">18:00 hrs</span>.”
+                </p>
+</div>
+<!-- Validated Strengths Checklist -->
+<div class="mt-space-sm pt-space-xs">
+<span class="font-label-micro text-label-micro text-secondary uppercase tracking-wider block mb-space-xs font-semibold">
+                  Criterios Verificados Exitosamente:
+                </span>
+<ul class="space-y-space-xs font-body-sm text-body-sm text-emerald-800">
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-base text-emerald-700 flex-shrink-0">check_circle</span>
+<span><strong>Verbo infinitivo formal:</strong> “Automatizar” asigna responsabilidad inequívoca al software.</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-base text-emerald-700 flex-shrink-0">check_circle</span>
+<span><strong>Métricas de aceptación explícitas:</strong> ≥ 99.2% de conciliación y ventana horaria límite 18:00 hrs.</span>
+</li>
+<li class="flex items-start gap-space-xs">
+<span class="material-symbols-outlined text-base text-emerald-700 flex-shrink-0">check_circle</span>
+<span><strong>Volumetría acotada:</strong> 4 extractos bancarios estructurados por jornada operativa.</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Algorithmic Justification Callout Box -->
+<div class="mt-space-md p-space-md rounded-lg bg-surface-container-low flex items-start gap-space-sm text-on-surface">
+<span class="material-symbols-outlined text-primary text-xl flex-shrink-0 mt-0.5">policy</span>
+<div class="flex flex-col gap-1">
+<span class="font-label-micro text-label-micro text-primary uppercase font-bold tracking-wider">
+                Justificación Algorítmica y Política de Gobernanza:
+              </span>
+<p class="font-body-sm text-body-sm text-secondary leading-relaxed">
+                Incorpora métricas cuantificables (99.2%), acotamiento temporal estricto (18:00 hrs) y alineación con la sección 3.2 de la guía ERS-2025. Cumple con la regla de <strong>consentimiento explícito</strong> (la IA nunca sobreescribe automáticamente sin confirmación humana previa del analista responsable).
+              </p>
+</div>
+</div>
+<!-- Action Buttons Bar for the AI Suggestion -->
+<div class="mt-space-lg pt-space-sm flex flex-wrap items-center justify-between gap-space-sm">
+<div class="flex items-center gap-space-xs text-secondary font-label-micro text-label-micro">
+<span class="material-symbols-outlined text-base">shield</span>
+<span>Audit Log: Sugerencia generada bajo token session ID #TI-8941</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="px-space-md py-2 rounded-lg bg-surface-container hover:bg-surface-container-highest text-on-surface font-headline-sm text-headline-sm transition-colors flex items-center gap-1 shadow-sm" id="btnDismiss" type="button">
+<span class="material-symbols-outlined text-base">close</span>
+                Descartar sugerencia
+              </button>
+<button class="px-space-lg py-2 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-headline-sm text-headline-sm transition-all shadow-md flex items-center gap-2" id="btnAccept" type="button">
+<span class="material-symbols-outlined text-lg">check_circle</span>
+                ✓ Aceptar propuesta (Reemplazar en borrador)
+              </button>
+</div>
+</div>
+</div>
+</div>
+<!-- CURRENT OBJECTIVES LIST (Contexto previo: OBJ-01 y OBJ-02) -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-md">
+<div class="flex flex-wrap items-center justify-between gap-space-sm">
+<div>
+<div class="flex items-center gap-space-xs">
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold">
+                Matriz de Objetivos Validados del Sistema
+              </h3>
+<span class="font-label-micro text-label-micro bg-secondary-container text-on-secondary-fixed px-2 py-0.5 rounded-full font-bold">2 Registrados</span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary mt-0.5">
+              Inventario de objetivos aprobados que alimentan la matriz de trazabilidad de requerimientos funcionales posteriores.
+            </p>
+</div>
+<!-- Add new objective manual button -->
+<button class="px-space-md py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md transition-colors flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-base">add</span>
+            Crear Objetivo Manualmente
+          </button>
+</div>
+<!-- Objectives Dynamic List Items -->
+<div class="space-y-space-sm">
+<!-- OBJ-01 Card -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm transition-shadow hover:shadow-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pb-space-xs mb-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary cursor-grab select-none">drag_indicator</span>
+<span class="font-label-micro text-label-micro px-2 py-1 rounded bg-primary text-on-primary font-bold">OBJ-01</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Reducción de Latencia en Conciliación Bancaria Diaria</h4>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-micro text-label-micro px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold uppercase">Validado</span>
+<span class="font-label-micro text-label-micro px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-bold uppercase">Prioridad Alta</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant pl-space-md">
+              Procesar y conciliar el 100% de las transacciones correspondientes al corte contable diario en un lapso no superior a 15 minutos posteriores al cierre de transmisión del switch transaccional (18:30 hrs).
+            </p>
+<div class="mt-space-sm pt-space-xs pl-space-md flex flex-wrap items-center justify-between gap-space-sm font-label-micro text-label-micro text-secondary">
+<div class="flex items-center gap-space-md">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">speed</span> Métrica: ≤ 15 min
+                </span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">fact_check</span> Verificación: Logs automáticos de cola RabbitMQ
+                </span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="p-1 rounded hover:bg-surface-container text-secondary hover:text-on-surface transition-colors" title="Editar objetivo" type="button">
+<span class="material-symbols-outlined text-base">edit</span>
+</button>
+<button class="p-1 rounded hover:bg-error-container text-error transition-colors" title="Eliminar" type="button">
+<span class="material-symbols-outlined text-base">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- OBJ-02 Card -->
+<div class="bg-surface-container-low rounded-xl p-space-md shadow-sm transition-shadow hover:shadow-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pb-space-xs mb-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary cursor-grab select-none">drag_indicator</span>
+<span class="font-label-micro text-label-micro px-2 py-1 rounded bg-primary text-on-primary font-bold">OBJ-02</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Auditabilidad y Registro de Trazabilidad Total</h4>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="font-label-micro text-label-micro px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold uppercase">Validado</span>
+<span class="font-label-micro text-label-micro px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed font-bold uppercase">Prioridad Media</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant pl-space-md">
+              Mantener registro inalterable con firma SHA-256 de cada modificación, discrepancia o validación humana efectuada por los operadores contables, reteniendo la evidencia por un periodo mínimo normativo de 5 años.
+            </p>
+<div class="mt-space-sm pt-space-xs pl-space-md flex flex-wrap items-center justify-between gap-space-sm font-label-micro text-label-micro text-secondary">
+<div class="flex items-center gap-space-md">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">verified_user</span> Métrica: 100% transacciones firmadas
+                </span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">schedule</span> Retención: 5 años
+                </span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="p-1 rounded hover:bg-surface-container text-secondary hover:text-on-surface transition-colors" title="Editar objetivo" type="button">
+<span class="material-symbols-outlined text-base">edit</span>
+</button>
+<button class="p-1 rounded hover:bg-error-container text-error transition-colors" title="Eliminar" type="button">
+<span class="material-symbols-outlined text-base">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Pending Target Placeholder (Candidate OBJ-03) -->
+<div class="rounded-xl p-space-md bg-surface-container-low transition-all" id="targetSlot">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="font-label-micro text-label-micro px-2 py-1 rounded bg-secondary text-on-secondary font-bold">OBJ-03 (Borrador)</span>
+<span class="font-body-md text-body-md text-secondary italic" id="draftTargetText">Esperando resolución de propuesta IA o edición directa...</span>
+</div>
+<span class="font-label-micro text-label-micro px-2 py-0.5 rounded bg-surface-container text-secondary font-semibold">Pendiente</span>
+</div>
+</div>
+</div>
+</div>
+<!-- WIZARD STICKY BOTTOM ACTION BAR -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-wrap items-center justify-between gap-space-md mt-space-sm">
+<!-- Left: Back Button -->
+<button class="px-space-md py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-headline-sm text-headline-sm transition-colors flex items-center gap-space-xs shadow-sm" type="button">
+<span class="material-symbols-outlined text-base">arrow_back</span>
+          Paso Anterior
+        </button>
+<!-- Center & Right Actions -->
+<div class="flex items-center gap-space-sm flex-wrap">
+<button class="px-space-md py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-headline-sm text-headline-sm transition-colors flex items-center gap-space-xs shadow-sm" type="button">
+<span class="material-symbols-outlined text-base text-primary">save</span>
+            Guardar borrador
+          </button>
+<button class="px-space-lg py-2 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-headline-sm text-headline-sm transition-colors flex items-center gap-space-xs shadow-md" type="button">
+<span>Siguiente: Consideraciones y Beneficios</span>
+<span class="material-symbols-outlined text-base">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Inline Script for Interactive AI Suggestion Resolution -->
+<script>
+    (function() {
+      const btnAccept = document.getElementById('btnAccept');
+      const btnDismiss = document.getElementById('btnDismiss');
+      const aiPanel = document.getElementById('aiSuggestionPanel');
+      const draftTarget = document.getElementById('draftTargetText');
+      const targetSlot = document.getElementById('targetSlot');
+
+      if (btnAccept && draftTarget && targetSlot && aiPanel) {
+        btnAccept.addEventListener('click', function() {
+          const acceptedText = 'Automatizar el proceso de cotejo de 4 extractos bancarios diarios mediante algoritmo de dispersión tolerante a fallas, garantizando un índice de coincidencia no menor al 99.2% antes de las 18:00 hrs.';
+          
+          // Animate and update draft target slot
+          draftTarget.textContent = acceptedText;
+          draftTarget.classList.remove('italic', 'text-secondary');
+          draftTarget.classList.add('text-on-surface', 'font-medium');
+          
+          targetSlot.className = 'rounded-xl p-space-md bg-emerald-50 shadow-sm transition-all duration-300';
+          
+          // Toast or banner effect on the panel
+          aiPanel.innerHTML = `
+            <div class="p-space-md bg-emerald-100 flex items-center justify-between text-emerald-900 rounded-xl">
+              <div class="flex items-center gap-space-sm">
+                <span class="material-symbols-outlined text-2xl text-emerald-700">check_circle</span>
+                <div>
+                  <span class="font-headline-sm text-headline-sm block">Propuesta IA aceptada e incorporada a OBJ-03 con éxito</span>
+                  <span class="font-body-sm text-body-sm text-emerald-800">El objetivo cumple formalmente con el estándar IEEE 830 para verificación de pruebas funcionales.</span>
+                </div>
+              </div>
+              <button onclick="location.reload()" class="font-label-md text-label-md text-emerald-900 underline hover:no-underline">Restablecer sugerencia</button>
+            </div>
+          `;
+        });
+      }
+
+      if (btnDismiss && aiPanel) {
+        btnDismiss.addEventListener('click', function() {
+          aiPanel.style.opacity = '0';
+          aiPanel.style.transform = 'translateY(-10px)';
+          setTimeout(function() {
+            aiPanel.innerHTML = `
+              <div class="p-space-md bg-surface-container-low flex items-center justify-between rounded-xl">
+                <span class="font-body-sm text-body-sm text-secondary">Sugerencia descartada por el usuario. El texto informal se mantiene en borrador manual.</span>
+                <button onclick="location.reload()" class="font-label-md text-label-md text-primary font-bold hover:underline">Recuperar asistente</button>
+              </div>
+            `;
+            aiPanel.style.opacity = '1';
+            aiPanel.style.transform = 'none';
+          }, 250);
+        });
+      }
+    })();
+  </script>
+</div></main></div></body></html>

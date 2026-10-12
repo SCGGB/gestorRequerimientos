@@ -1,0 +1,11 @@
+__pycache__/
+.venv/
+.env
+*.pyc
+node_modules/
+dist/
+wallet/
+*.log
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
