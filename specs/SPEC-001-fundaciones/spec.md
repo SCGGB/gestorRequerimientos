@@ -86,7 +86,7 @@ Dejar un monorepo ejecutable con backend FastAPI hexagonal, frontend Vite + Reac
 ## Preguntas abiertas
 - Version/tag exacta de la imagen Oracle de desarrollo (`oracle-free` u otra compatible).
 - Conjunto exacto de fuentes a instalar en la imagen del backend.
-- Proveedor de CI confirmado (se asume GitHub Actions; el repo aun no es git).
+- ~~Proveedor de CI confirmado~~ -> resuelto: GitHub Actions (repo `SCGGB/gestorRequerimientos`).
 
 ## Que **no** esta en esta spec
 - Modelo de dominio y tablas del requerimiento.

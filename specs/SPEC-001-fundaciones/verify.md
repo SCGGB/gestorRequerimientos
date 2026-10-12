@@ -2,18 +2,19 @@
 
 - Spec: `spec.md` (estado: Aprobada)
 - Fecha de verificacion: 2026-10-12
-- Rama: `spec/SPEC-001-fundaciones`
-- Entorno de evidencia: Windows + Docker Desktop 29.8.2; Python 3.12.15 (contenedor `python:3.12-slim`, paridad con CI); Node v24.21 / npm 11.19.
+- Rama: `main` (integrada desde `spec/SPEC-001-fundaciones`)
+- Remoto: `https://github.com/SCGGB/gestorRequerimientos` (repo publico, rama por defecto `main`)
+- Entorno de evidencia: Windows + Docker Desktop 29.8.2; Python 3.12.15 (contenedor `python:3.12-slim`, paridad con CI); Node v24.21 / npm 11.19; CI GitHub Actions.
 
 ## Resumen
 
 | Resultado | Cantidad | Criterios |
 |---|---|---|
-| Cumple | 7 | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-08 |
-| Parcial | 1 | CA-07 |
+| Cumple | 8 | CA-01, CA-02, CA-03, CA-04, CA-05, CA-06, CA-07, CA-08 |
+| Parcial | 0 | - |
 | No cumple | 0 | - |
 
-**Veredicto: la spec queda cumplida en el entorno local.** H-01 y H-02 corregidos y verificados end-to-end. Unica salvedad: CA-07 queda **Parcial** porque no hay `git remote` y la CI nunca se ha ejecutado en GitHub (evidencia solo por inspeccion).
+**Veredicto: la spec queda cumplida (8/8 criterios).** H-01, H-02 y H-03 corregidos y verificados end-to-end, incluida la CI en GitHub Actions.
 
 ## Matriz de criterios de aceptacion
 
@@ -25,7 +26,7 @@
 | CA-04 | Cumple | `pytest tests/integration -m integration` (Testcontainers `gvenzl/oracle-free:slim`): `4 passed in 10.47s` (`test_upgrade_creates_sys_auditoria`, `test_downgrade_drops_sys_auditoria`, `test_build_database_url_targets_service_not_sid`, `test_engine_built_from_ezeconnect_dsn_connects`). Revision `0001_base` crea `SYS_AUDITORIA` con PK, indice `SYS_AUDITORIA_ENTIDAD_IX`, columnas de auditoria y `CHECK (DETALLE IS JSON)`. |
 | CA-05 | Cumple | `ruff check .` (raiz del repo, como CI) -> `All checks passed!` en `python:3.12-slim`. |
 | CA-06 | Cumple | `mypy --strict backend/app` (raiz del repo, como CI) -> `Success: no issues found in 23 source files`. |
-| CA-07 | Parcial | `.github/workflows/ci.yml` define jobs `lint` (`ruff check .`), `types` (`mypy --strict backend/app`) y `tests` (`pytest -m "integration or not integration"`) disparados en push (`branches: ["**"]`) y `pull_request`; por defecto fallan si el paso falla. **No hay `git remote`**, la CI nunca se ha ejecutado en GitHub: cumplimiento verificado por inspeccion, sin evidencia de ejecucion. |
+| CA-07 | Cumple | CI ejecutada en GitHub Actions al integrar a `main`: run [`38313326196`](https://github.com/SCGGB/gestorRequerimientos/actions/runs/38313326196) -> `completed/success` (2026-10-12T21:52:28Z). Jobs: `Lint (ruff)` success, `Types (mypy --strict)` success, `Tests (pytest + Oracle)` success. El workflow `.github/workflows/ci.yml` se dispara en `push` (`branches: ["**"]`) y `pull_request` y falla si algun paso falla. |
 | CA-08 | Cumple | `npm run build` (tsc -b + vite build) OK; Playwright `e2e/layout.spec.ts` -> `1 passed (15.4s)` verificando tipografia Inter, fondo `rgb(248, 250, 252)` y badge `rgb(15, 76, 129)`. Tokens definidos una sola vez en `frontend/src/index.css` (`@theme`). |
 
 ### Comandos ejecutados (evidencia reproducible)
@@ -50,6 +51,10 @@ docker compose build                 # backend image ok
 docker compose up -d                 # -> oracle+backend+frontend; GET /health -> {"status":"ok","database":"ok"}
 docker compose --profile objectstore up -d          # -> rustfs healthy
 # GET http://localhost:9000/minio/health/ready -> 200 {"ready":true,...}
+
+# CI (GitHub Actions) - evidencia via API publica
+# GET https://api.github.com/repos/SCGGB/gestorRequerimientos/actions/runs -> success
+# run 38313326196: Lint (ruff)=success, Types (mypy --strict)=success, Tests (pytest + Oracle)=success
 ```
 
 ## Requisitos funcionales (trazabilidad)
@@ -62,7 +67,7 @@ docker compose --profile objectstore up -d          # -> rustfs healthy
 | RF-04 | Cumple | Ver CA-04. |
 | RF-05 | Cumple | Ver CA-03. |
 | RF-06 | Cumple | Ver CA-08. |
-| RF-07 | Parcial | Ver CA-07. |
+| RF-07 | Cumple | Ver CA-07. |
 
 ## Hallazgos
 
@@ -87,8 +92,8 @@ El servicio usaba `minio/minio:latest`, retirado de Docker Hub (MinIO ceso su de
 
 **Decision (ADR-006)**: reemplazar por **RustFS** (`rustfs/rustfs:1.0.0`, Apache-2.0, S3-compatible, con rutas de salud compatibles con MinIO), declarado bajo el **perfil de Compose `objectstore`**; renombrar `STORAGE_BACKEND` `minio` → `s3`. Verificacion: `docker compose up -d` levanta solo `oracle+backend+frontend` y `/health` = `ok/ok`; `docker compose --profile objectstore up -d` deja `rustfs` `healthy` con `/minio/health/ready` -> `200`. CA-03/RF-05 pasan a **Cumple**.
 
-### H-03 (menor) - CI sin evidencia de ejecucion
-Sin `git remote`, el pipeline nunca corrio en GitHub. CA-07 queda verificado solo por inspeccion.
+### H-03 (RESUELTO) - CI sin evidencia de ejecucion
+Se agrego el remoto `https://github.com/SCGGB/gestorRequerimientos` y se integro a `main`. La CI corrio en GitHub Actions: run [`38313326196`](https://github.com/SCGGB/gestorRequerimientos/actions/runs/38313326196) -> `completed/success`, con `Lint (ruff)`, `Types (mypy --strict)` y `Tests (pytest + Oracle)` en verde. CA-07/RF-07 pasan a **Cumple**.
 
 ### H-04 (menor) - Desalineacion de toolchain local
 El Python global del entorno es 3.15 y no hay venv del proyecto, por lo que `ruff`/`mypy`/`pytest` no estan disponibles fuera de contenedor. Toda la evidencia se reprodujo en `python:3.12-slim` (paridad con el stack objetivo). No bloquea, pero conviene documentar el flujo de desarrollo.
@@ -98,10 +103,10 @@ El Python global del entorno es 3.15 y no hay venv del proyecto, por lo que `ruf
 1. ~~Corregir `build_database_url` para emitir `?service_name=<svc>`~~ -> **resuelto** (H-01) con pruebas unitarias e integracion.
 2. ~~Reemplazar/parametrizar `minio/minio:latest`~~ -> **resuelto** (H-02, ADR-006): RustFS `1.0.0` bajo perfil `objectstore` y `STORAGE_BACKEND` `minio`->`s3`.
 3. Versionar/fijar el tag exacto de la imagen Oracle de desarrollo (pregunta abierta de la spec) y el conjunto exacto de fuentes del machote en la imagen del backend.
-4. Ejecutar la CI en un remoto para obtener evidencia de CA-07 (y anadir `git remote`).
+4. ~~Ejecutar la CI en un remoto para obtener evidencia de CA-07~~ -> **resuelto** (H-03): remoto GitHub `SCGGB/gestorRequerimientos` y run `38313326196` en verde.
 5. Documentar en `doc/development/` el flujo de entorno local (python 3.12 + venv) para reproducir `ruff`/`mypy`/`pytest`.
 6. Configurar endpoint/region/path-style S3 para la app cuando se implemente el `StoragePort` (spec posterior; aqui solo infraestructura).
 
 ## Pendientes
 
-- CA-07: ejecucion real de la CI (H-03). No afecta a los criterios verificables en local.
+- Ninguno. Todos los criterios de aceptacion (CA-01..CA-08) y requisitos funcionales (RF-01..RF-07) quedan en **Cumple**.
