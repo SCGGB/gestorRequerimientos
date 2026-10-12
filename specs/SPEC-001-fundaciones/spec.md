@@ -2,11 +2,11 @@
 
 - Estado: Aprobada
 - Fecha: 2026-10-12
-- Documentos aplicables: `AGENTS.md`, `doc/architecture/adr/001-backend-python-fastapi.md`, `doc/architecture/adr/002-arquitectura-hexagonal-y-docker.md`, `doc/architecture/adr/003-autenticacion.md`, `doc/development/convenciones.md`, `.env.example`
+- Documentos aplicables: `AGENTS.md`, `doc/architecture/adr/001-backend-python-fastapi.md`, `doc/architecture/adr/002-arquitectura-hexagonal-y-docker.md`, `doc/architecture/adr/003-autenticacion.md`, `doc/architecture/adr/006-almacenamiento-objetos-dev.md`, `doc/development/convenciones.md`, `.env.example`
 - Depende de: ninguna
 
 ## Contexto y objetivo
-Dejar un monorepo ejecutable con backend FastAPI hexagonal, frontend Vite + React + TypeScript + Tailwind y `docker compose` (backend, frontend, Oracle de desarrollo y MinIO de desarrollo) con Alembic, calidad (`ruff`/`mypy`/`pytest`) e integracion continua, como base para el resto de specs.
+Dejar un monorepo ejecutable con backend FastAPI hexagonal, frontend Vite + React + TypeScript + Tailwind y `docker compose` (backend, frontend, Oracle de desarrollo y un object store S3 de desarrollo RustFS) con Alembic, calidad (`ruff`/`mypy`/`pytest`) e integracion continua, como base para el resto de specs.
 
 ## Alcance
 
@@ -17,7 +17,7 @@ Dejar un monorepo ejecutable con backend FastAPI hexagonal, frontend Vite + Reac
 - SQLAlchemy 2.x con `python-oracledb` (thin) y Alembic; migracion base sobre Oracle.
 - Imagen Docker del backend con Python 3.12, LibreOffice headless y las fuentes del machote.
 - Imagen Docker del frontend y build de produccion (Vite).
-- `docker-compose.yml` con backend, frontend, Oracle (dev) y MinIO (dev).
+- `docker-compose.yml` con backend, frontend, Oracle (dev) y un object store S3 de desarrollo (RustFS, perfil opcional `objectstore`).
 - Scaffold del frontend (Vite + React + TypeScript + Tailwind) con los tokens de `doc/ui/design/STITCH_DESIGN.md` y un layout base.
 - Calidad: `ruff`, `mypy --strict`, `pytest` con Testcontainers y Playwright (configuracion base).
 - Control de versiones (`git init`) y pipeline de CI en GitHub Actions.
@@ -36,14 +36,14 @@ Dejar un monorepo ejecutable con backend FastAPI hexagonal, frontend Vite + Reac
 - RF-02. El backend expone `GET /version` con la version de la aplicacion.
 - RF-03. La configuracion se carga exclusivamente desde variables de entorno; no hay secretos en el codigo ni en las imagenes.
 - RF-04. Alembic aplica la migracion base contra Oracle y crea la tabla `SYS_AUDITORIA`.
-- RF-05. `docker compose up` levanta backend, frontend, Oracle (dev) y MinIO (dev) y el backend responde `GET /health`.
+- RF-05. `docker compose up` levanta backend, frontend y Oracle (dev) y el backend responde `GET /health`; con `docker compose --profile objectstore up` se levanta ademas el object store S3 de desarrollo (RustFS).
 - RF-06. El frontend sirve una pagina base que usa los tokens de diseno institucional.
 - RF-07. La CI ejecuta `ruff`, `mypy --strict` y `pytest` en cada push y pull request.
 
 ## Criterios de aceptacion
 - CA-01. Dado el backend en ejecucion, cuando se invoca `GET /health`, entonces responde `200` con estado de aplicacion y base de datos en `ok`.
 - CA-02. Dado el backend en ejecucion, cuando se invoca `GET /version`, entonces responde `200` con la version de la aplicacion.
-- CA-03. Dado `docker compose up`, cuando los servicios terminan de iniciar, entonces `GET /health` responde `200` y la base de datos reporta `ok`.
+- CA-03. Dado `docker compose up`, cuando los servicios terminan de iniciar, entonces `GET /health` responde `200` y la base de datos reporta `ok`; con `--profile objectstore`, el object store S3 de desarrollo (RustFS) queda `healthy`.
 - CA-04. Dado un Oracle disponible, cuando se ejecuta `alembic upgrade head`, entonces la tabla `SYS_AUDITORIA` existe con sus columnas de auditoria.
 - CA-05. Dado el arbol del repositorio, cuando se ejecuta `ruff check .`, entonces no hay errores.
 - CA-06. Dado el arbol del repositorio, cuando se ejecuta `mypy --strict backend/app`, entonces no hay errores.
@@ -70,7 +70,7 @@ Dejar un monorepo ejecutable con backend FastAPI hexagonal, frontend Vite + Reac
 - **Si:** SPEC-001 se limita a infraestructura y una migracion base; el modelo de dominio va en SPEC-002.
 - **Si:** scaffold minimo del frontend ahora (layout y tokens); las pantallas reales van en SPEC-004.
 - **Si:** la imagen del backend incluye LibreOffice headless y las fuentes del machote desde el inicio, para habilitar el spike DOCX/PDF sin rehacer la imagen.
-- **Si:** `docker compose` en desarrollo incluye Oracle (`oracle-free`) y MinIO; storage local por defecto y MinIO opcional.
+- **Si:** `docker compose` en desarrollo incluye Oracle (`oracle-free`) y un object store S3 (RustFS) bajo el perfil `objectstore`; storage local por defecto y object store opcional.
 - **Si:** `git init` y CI en GitHub Actions con lint, tipos y pruebas.
 - **No:** firma electronica, OIDC y auditoria funcional en esta spec (dependen de SPEC-008).
 

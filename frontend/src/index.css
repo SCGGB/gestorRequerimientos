@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+/*
+ * Tokens de diseno institucional.
+ * Fuente unica: doc/ui/design/STITCH_DESIGN.md. No duplicar estos valores
+ * en componentes; consumir las utilidades generadas por Tailwind.
+ */
+@theme {
+  /* Paleta institucional (STITCH_DESIGN.md > Colors) */
+  --color-primary: #0f4c81;
+  --color-primary-hover: #0b3860;
+  --color-on-primary: #ffffff;
+  --color-secondary: #1e293b;
+  --color-tertiary: #0284c7;
+  --color-neutral-dark: #334155;
+  --color-canvas: #f8fafc;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-muted: #f1f5f9;
+
+  /* Semantica funcional */
+  --color-success: #10b981;
+  --color-warning: #d97706;
+  --color-danger: #dc3545;
+  --color-danger-hover: #b02a37;
+
+  /* Superficies y estados (front matter de STITCH_DESIGN.md) */
+  --color-surface-dim: #ccdbf4;
+  --color-surface-bright: #f8f9ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eff4ff;
+  --color-surface-container: #e6eeff;
+  --color-surface-container-high: #dde9ff;
+  --color-surface-container-highest: #d5e3fd;
+  --color-on-surface: #0d1c2f;
+  --color-on-surface-variant: #42474f;
+  --color-inverse-surface: #233144;
+  --color-inverse-on-surface: #ebf1ff;
+  --color-outline: #727780;
+  --color-outline-variant: #c2c7d1;
+  --color-surface-tint: #2d6197;
+  --color-primary-container: #0f4c81;
+  --color-on-primary-container: #8ebdf9;
+  --color-inverse-primary: #a0c9ff;
+  --color-secondary-container: #d5e0f8;
+  --color-on-secondary-container: #586377;
+  --color-tertiary-container: #004e78;
+  --color-on-tertiary-container: #74c1ff;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-background: #f8f9ff;
+  --color-on-background: #0d1c2f;
+  --color-surface-variant: #d5e3fd;
+
+  /* Tipografia */
+  --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Radios */
+  --radius-sm: 0.125rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  /* Espaciado */
+  --spacing-gutter: 1.5rem;
+  --spacing-gutter-sm: 0.75rem;
+  --spacing-margin: 2rem;
+  --spacing-margin-mobile: 1rem;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-canvas);
+  color: var(--color-secondary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

@@ -1,0 +1,4 @@
+Directorio de migraciones Alembic.
+
+- `env.py` construye la URL desde `Settings` (`ORACLE_*`) en modo thin.
+- El esquema se crea/actualiza solo con Alembic (`alembic upgrade head`); nunca DDL manual.
