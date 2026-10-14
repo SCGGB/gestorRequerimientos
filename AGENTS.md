@@ -84,6 +84,18 @@ Criterios de la spec cumplidos y evidenciados en `verify.md`, pruebas pasando, l
 
 - Usar código limpio, nombres, funciones, variables, etc. en ingles
 
+## Comandos (desde `backend/`)
+
+- Lint: `ruff check .`
+- Tipos: `mypy --strict app`
+- Unitarias (sin Docker): `python -m pytest`
+- Integración (Docker + Testcontainers): `python -m pytest -m integration tests/integration`
+- Si el host no tiene Python 3.12, correr lint y pruebas en un contenedor 3.12:
+
+```
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "${PWD}:/app" -w /app -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal python:3.12-slim sh -c "pip install -q -e '.[dev]' && ruff check . && python -m pytest -m integration tests/integration -p no:cacheprovider -q"
+```
+
 ## Spec Driven Development - Skills
 - /spec usaremos esta habilidad para crear las especificaciones
 - /spec-impl usaremos esta skill para hacer las implementaciones
