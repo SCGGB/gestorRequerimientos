@@ -90,10 +90,23 @@ Criterios de la spec cumplidos y evidenciados en `verify.md`, pruebas pasando, l
 - Tipos: `mypy --strict app`
 - Unitarias (sin Docker): `python -m pytest`
 - Integración (Docker + Testcontainers): `python -m pytest -m integration tests/integration`
-- Si el host no tiene Python 3.12, correr lint y pruebas en un contenedor 3.12:
+- Si el host no tiene Python 3.12, usar la imagen de desarrollo cacheada (no
+  reinstala dependencias en cada corrida). Construir una sola vez desde la raiz:
 
 ```
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "${PWD}:/app" -w /app -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal python:3.12-slim sh -c "pip install -q -e '.[dev]' && ruff check . && python -m pytest -m integration tests/integration -p no:cacheprovider -q"
+docker build -f docker/backend-dev.Dockerfile -t gestor-req-dev .
+```
+
+y luego, desde `backend/` (usar ruta absoluta; `${PWD}` no expande bien en PowerShell):
+
+```
+docker run --rm -v "<ruta-absoluta>/backend:/app" -w /app gestor-req-dev sh -c "ruff check . && mypy --strict app && python -m pytest -q -p no:cacheprovider"
+```
+
+- Integracion (Docker + Testcontainers) sin imagen cacheada:
+
+```
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v "${PWD}:/app" -w /app -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal python:3.12-slim sh -c "pip install -q -e '.[dev]' && python -m pytest -m integration tests/integration -p no:cacheprovider -q"
 ```
 
 ## Spec Driven Development - Skills

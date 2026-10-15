@@ -8,6 +8,8 @@ from app.domain.requirement.errors import (
     InvalidFolioError,
     InvalidStateTransitionError,
     MultipleWorkingVersionsError,
+    RequirementNotEditableError,
+    SignatureNotAllowedError,
 )
 from app.domain.requirement.items import CollectionItem
 from app.domain.requirement.signature import Signature
@@ -69,6 +71,34 @@ class Requirement:
 
     def working_versions(self) -> tuple[RequirementVersion, ...]:
         return tuple(version for version in self.versions if version.is_working())
+
+    def version_by_id(self, version_id: int) -> RequirementVersion | None:
+        for version in self.versions:
+            if version.id == version_id:
+                return version
+        return None
+
+    def ensure_editable(self) -> None:
+        """Exige que el requerimiento este en estado editable (BORRADOR)."""
+        if self.status is not RequirementStatus.BORRADOR:
+            raise RequirementNotEditableError(
+                "Solo se puede editar un requerimiento en BORRADOR."
+            )
+
+    def ensure_signable(self, version_id: int) -> None:
+        """Exige estado final y que la version sea la vigente (ADR-007)."""
+        if self.status not in (
+            RequirementStatus.APROBADO,
+            RequirementStatus.GENERADO,
+        ):
+            raise SignatureNotAllowedError(
+                "Solo se registran firmas con estado APROBADO o GENERADO."
+            )
+        current = self.current_version()
+        if current is None or current.id != version_id:
+            raise SignatureNotAllowedError(
+                "Las firmas solo se registran sobre la version vigente."
+            )
 
     def working_version(self) -> RequirementVersion | None:
         working = self.working_versions()

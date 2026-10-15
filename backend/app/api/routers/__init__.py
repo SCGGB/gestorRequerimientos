@@ -1,3 +1,19 @@
-from app.api.routers import health, version
+from app.api.routers import (
+    attachments,
+    catalogs,
+    collections,
+    health,
+    requirements,
+    signatures,
+    version,
+)
 
-__all__ = ["health", "version"]
+__all__ = [
+    "attachments",
+    "catalogs",
+    "collections",
+    "health",
+    "requirements",
+    "signatures",
+    "version",
+]

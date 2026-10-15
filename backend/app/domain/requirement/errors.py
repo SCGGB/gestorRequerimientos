@@ -16,3 +16,11 @@ class MultipleWorkingVersionsError(DomainError):
 
 class InvalidFolioError(DomainError):
     """El folio del requerimiento no es valido."""
+
+
+class RequirementNotEditableError(DomainError):
+    """El requerimiento o su version de trabajo no admite edicion."""
+
+
+class SignatureNotAllowedError(DomainError):
+    """Las firmas solo se registran en estado final y sobre la version vigente."""

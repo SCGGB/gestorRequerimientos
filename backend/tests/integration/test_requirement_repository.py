@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
 from dataclasses import replace
 from datetime import date
-from pathlib import Path
 
 import pytest
-import sqlalchemy as sa
-from alembic import command
-from alembic.config import Config
 from sqlalchemy.engine import Engine
 
+from app.application.errors import DataConflictError, DuplicateFolioError
 from app.domain.requirement.attachment import Attachment
 from app.domain.requirement.enums import BenefitKind, RequirementStatus, SignatureRole
 from app.domain.requirement.items import Benefit, Objective, Risk
@@ -22,23 +18,7 @@ from app.infrastructure.adapters.requirement_repository import (
 )
 from app.infrastructure.db import mappers
 
-BACKEND_DIR = Path(__file__).resolve().parents[2]
-
 pytestmark = pytest.mark.integration
-
-
-@pytest.fixture(scope="module")
-def migrated_engine(oracle_url: str) -> Iterator[Engine]:
-    config = Config(str(BACKEND_DIR / "alembic.ini"))
-    config.set_main_option("script_location", str(BACKEND_DIR / "alembic"))
-    config.set_main_option("sqlalchemy.url", oracle_url.replace("%", "%%"))
-    command.upgrade(config, "head")
-
-    engine = sa.create_engine(oracle_url)
-    try:
-        yield engine
-    finally:
-        engine.dispose()
 
 
 @pytest.fixture()
@@ -137,7 +117,7 @@ def test_updates_existing_requirement(repository: SqlAlchemyRequirementRepositor
 def test_duplicate_folio_is_rejected(repository: SqlAlchemyRequirementRepository) -> None:
     repository.save(_full_requirement(800004))
 
-    with pytest.raises(sa.exc.IntegrityError):
+    with pytest.raises(DuplicateFolioError):
         repository.save(_full_requirement(800004))
 
 
@@ -146,5 +126,5 @@ def test_invalid_dynamic_fields_json_is_rejected(
 ) -> None:
     monkeypatch.setattr(mappers, "dynamic_fields_to_json", lambda fields: "no-es-json")
 
-    with pytest.raises(sa.exc.IntegrityError):
+    with pytest.raises(DataConflictError):
         repository.save(_full_requirement(800005))
