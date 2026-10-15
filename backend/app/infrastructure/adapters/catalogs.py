@@ -60,6 +60,19 @@ class SqlAlchemyPositionCatalog(PositionCatalog):
             )
             return [mappers.position_from_row(dict(row)) for row in rows]
 
+    def list_active(self) -> Sequence[Position]:
+        with self._session_factory() as session:
+            rows = (
+                session.execute(
+                    select(REQ_CARGO)
+                    .where(REQ_CARGO.c.ACTIVO == "S")
+                    .order_by(REQ_CARGO.c.NOMBRE)
+                )
+                .mappings()
+                .all()
+            )
+            return [mappers.position_from_row(dict(row)) for row in rows]
+
     def get(self, position_id: int) -> Position | None:
         with self._session_factory() as session:
             row = (

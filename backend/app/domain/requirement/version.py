@@ -5,6 +5,7 @@ from typing import Any, TypeVar
 
 from app.domain.requirement.attachment import Attachment
 from app.domain.requirement.enums import SignatureRole
+from app.domain.requirement.errors import RequirementNotEditableError
 from app.domain.requirement.items import (
     Benefit,
     CollectionItem,
@@ -53,6 +54,13 @@ class RequirementVersion:
     def is_working(self) -> bool:
         """Una version de trabajo es la unica no congelada del requerimiento."""
         return not self.frozen
+
+    def ensure_working(self) -> None:
+        """Exige que la version no este congelada para admitir edicion."""
+        if self.frozen:
+            raise RequirementNotEditableError(
+                "Una version congelada no admite edicion."
+            )
 
     def freeze(self) -> "RequirementVersion":
         """Congela la version; si ya estaba congelada la devuelve igual."""

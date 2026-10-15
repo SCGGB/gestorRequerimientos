@@ -21,5 +21,9 @@ class PositionCatalog(ABC):
         pass
 
     @abstractmethod
+    def list_active(self) -> Sequence[Position]:
+        pass
+
+    @abstractmethod
     def get(self, position_id: int) -> Position | None:
         pass

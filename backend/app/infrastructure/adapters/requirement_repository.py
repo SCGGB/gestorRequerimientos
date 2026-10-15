@@ -2,13 +2,23 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
-from typing import Any
+from typing import Any, Protocol
 
-from sqlalchemy import Table, delete, insert, select, update
+from sqlalchemy import Table, delete, func, insert, select, update
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.application.ports.requirement_repository import RequirementRepository
+from app.application.errors import (
+    ApplicationError,
+    DataConflictError,
+    DuplicateFolioError,
+    RequirementNotFoundError,
+)
+from app.application.ports.requirement_repository import (
+    RequirementRepository,
+    RequirementSearchFilters,
+)
 from app.domain.requirement.items import CollectionItem
 from app.domain.requirement.requirement import Requirement
 from app.domain.requirement.version import RequirementVersion
@@ -29,7 +39,18 @@ from app.infrastructure.db.tables import (
 )
 
 SYSTEM_ACTOR = "SYSTEM"
+FOLIO_UNIQUE_CONSTRAINT = "REQ_REQUERIMIENTO_FOLIO_UQ"
+# Desplazamiento temporal de ORDEN para el reorden en dos fases (UQ VERSION_ID+ORDEN);
+# los ORDEN de dominio son numeros pequeños, muy por debajo de este umbral.
+ORDER_SHIFT = 1_000_000
 ToRow = Callable[..., dict[str, Any]]
+
+
+class PersistableChild(Protocol):
+    """Sub-recurso con id estable (coleccion, firma o anexo)."""
+
+    @property
+    def id(self) -> int | None: ...
 
 
 def _insert_audit(now: datetime) -> dict[str, Any]:
@@ -45,18 +66,27 @@ def _update_audit(now: datetime) -> dict[str, Any]:
     return {"UPDATED_AT": now, "UPDATED_BY": SYSTEM_ACTOR}
 
 
+def _map_integrity_error(exc: IntegrityError) -> ApplicationError:
+    if FOLIO_UNIQUE_CONSTRAINT in str(exc):
+        return DuplicateFolioError()
+    return DataConflictError()
+
+
 class SqlAlchemyRequirementRepository(RequirementRepository):
     def __init__(self, engine: Engine) -> None:
         self._session_factory: sessionmaker[Session] = create_session_factory(engine)
 
     def save(self, requirement: Requirement) -> Requirement:
-        with self._session_factory.begin() as session:
-            requirement_id = self._persist_requirement(session, requirement)
+        try:
+            with self._session_factory.begin() as session:
+                requirement_id = self._persist_requirement(session, requirement)
+        except IntegrityError as exc:
+            raise _map_integrity_error(exc) from exc
         return self.get(requirement_id)
 
     def get(self, requirement_id: int) -> Requirement:
         with self._session_factory() as session:
-            return self._load(session, requirement_id)
+            return self._load_translating(session, requirement_id)
 
     def get_by_folio(self, folio: int) -> Requirement | None:
         with self._session_factory() as session:
@@ -77,6 +107,46 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
                 .all()
             )
             return tuple(self._load(session, int(requirement_id)) for requirement_id in ids)
+
+    def search(
+        self,
+        filters: RequirementSearchFilters,
+        *,
+        offset: int,
+        limit: int,
+    ) -> tuple[Sequence[Requirement], int]:
+        conditions = []
+        if filters.status is not None:
+            conditions.append(REQ_REQUERIMIENTO.c.ESTADO == filters.status.value)
+        if filters.folio is not None:
+            conditions.append(REQ_REQUERIMIENTO.c.FOLIO == filters.folio)
+
+        with self._session_factory() as session:
+            count_statement = select(func.count()).select_from(REQ_REQUERIMIENTO)
+            if conditions:
+                count_statement = count_statement.where(*conditions)
+            total = int(session.execute(count_statement).scalar_one())
+
+            ids_statement = (
+                select(REQ_REQUERIMIENTO.c.ID)
+                .order_by(REQ_REQUERIMIENTO.c.ID)
+                .offset(offset)
+                .limit(limit)
+            )
+            if conditions:
+                ids_statement = ids_statement.where(*conditions)
+            ids = session.execute(ids_statement).scalars().all()
+
+            items = tuple(
+                self._load_translating(session, int(requirement_id)) for requirement_id in ids
+            )
+        return items, total
+
+    def _load_translating(self, session: Session, requirement_id: int) -> Requirement:
+        try:
+            return self._load(session, requirement_id)
+        except NoResultFound as exc:
+            raise RequirementNotFoundError() from exc
 
     def _persist_requirement(self, session: Session, requirement: Requirement) -> int:
         now = datetime.now()
@@ -202,12 +272,7 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
         version_id: int,
         now: datetime,
     ) -> None:
-        session.execute(delete(table).where(table.c.VERSION_ID == version_id))
-        for item in items:
-            row = to_row(item, version_id=version_id)
-            row.pop("ID", None)
-            row.update(_insert_audit(now))
-            session.execute(insert(table).values(**row))
+        self._upsert_rows(session, table, to_row, items, version_id, now, ordered=True)
 
     def _replace_signatures(
         self,
@@ -216,12 +281,15 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
         version_id: int,
         now: datetime,
     ) -> None:
-        session.execute(delete(REQ_FIRMA).where(REQ_FIRMA.c.VERSION_ID == version_id))
-        for signature in version.signatures:
-            row = mappers.signature_to_row(signature, version_id=version_id)
-            row.pop("ID", None)
-            row.update(_insert_audit(now))
-            session.execute(insert(REQ_FIRMA).values(**row))
+        self._upsert_rows(
+            session,
+            REQ_FIRMA,
+            mappers.signature_to_row,
+            version.signatures,
+            version_id,
+            now,
+            ordered=False,
+        )
 
     def _replace_attachments(
         self,
@@ -230,12 +298,61 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
         version_id: int,
         now: datetime,
     ) -> None:
-        session.execute(delete(REQ_ANEXO).where(REQ_ANEXO.c.VERSION_ID == version_id))
-        for attachment in version.attachments:
-            row = mappers.attachment_to_row(attachment, version_id=version_id)
+        self._upsert_rows(
+            session,
+            REQ_ANEXO,
+            mappers.attachment_to_row,
+            version.attachments,
+            version_id,
+            now,
+            ordered=True,
+        )
+
+    def _upsert_rows(
+        self,
+        session: Session,
+        table: Table[Any],
+        to_row: ToRow,
+        items: Sequence[PersistableChild],
+        version_id: int,
+        now: datetime,
+        *,
+        ordered: bool,
+    ) -> None:
+        """Upsert por fila: conserva ids y auditoria; sin delete+insert total."""
+        existing_ids = {
+            int(row_id)
+            for row_id in session.execute(
+                select(table.c.ID).where(table.c.VERSION_ID == version_id)
+            ).scalars()
+        }
+        incoming_ids = {item.id for item in items if item.id is not None}
+        stale_ids = existing_ids - incoming_ids
+        if stale_ids:
+            session.execute(delete(table).where(table.c.ID.in_(stale_ids)))
+
+        if ordered and existing_ids & incoming_ids:
+            # Reorden en dos fases: primero saca las filas del rango final de
+            # ORDEN (la UQ VERSION_ID+ORDEN se valida por sentencia) y luego
+            # escriben los valores definitivos.
+            session.execute(
+                update(table)
+                .where(table.c.VERSION_ID == version_id)
+                .values(ORDEN=table.c.ORDEN - ORDER_SHIFT)
+            )
+
+        for item in items:
+            row = to_row(item, version_id=version_id)
             row.pop("ID", None)
-            row.update(_insert_audit(now))
-            session.execute(insert(REQ_ANEXO).values(**row))
+            if item.id is None:
+                row.update(_insert_audit(now))
+                session.execute(insert(table).values(**row))
+            else:
+                session.execute(
+                    update(table)
+                    .where(table.c.ID == item.id)
+                    .values(**row, **_update_audit(now))
+                )
 
     def _load(self, session: Session, requirement_id: int) -> Requirement:
         row = (
