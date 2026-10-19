@@ -60,7 +60,8 @@ Los campos `details` pueden incluir el detalle de validación (`RequestValidatio
 
 - `POST /requerimientos/{id}/versiones/{vid}/validar` es **dry-run**: no modifica estado ni contenido. Devuelve
   `200` con `valido=false` y la lista de errores si la versión no cumple (no es un error HTTP). Body opcional
-  `{ "a_estado": "GENERADO" }` para evaluar además las precondiciones de esa transición.
+  `{ "a_estado": "GENERADO" }` para evaluar además las precondiciones de esa transición. Si `a_estado` no es un
+  estado válido, responde `200` con `valido=false` y el error `unknown_target_state` (no es `422`).
 - `POST /requerimientos/{id}/transicionar` recibe `{ a_estado, motivo?, actor_id? }`. Si la transición no está
   permitida o falla la validación integral, responde **`400`** con el cuerpo `StateTransitionResponse`
   (`transicion_valida=false` y `errores[]`); en éxito responde `200` con el mismo esquema. Este `400` **no**

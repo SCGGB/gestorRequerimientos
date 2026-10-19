@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 
 from app.application.ports.requirement_repository import RequirementRepository
-from app.domain.requirement.enums import RequirementStatus
+from app.domain.requirement.enums import RequirementStatus, parse_status
 from app.domain.requirement.requirement import allowed_transitions
 from app.domain.requirement.validation import ValidationIssue, validate_requirement
 
@@ -44,7 +44,7 @@ class TransitionRequirementState:
     ) -> TransitionOutcome:
         requirement = self._repository.get(requirement_id)
         previous = requirement.status
-        target = self._parse_target(target_state)
+        target = parse_status(target_state)
         if target is None:
             return TransitionOutcome(
                 previous_status=previous,
@@ -102,10 +102,3 @@ class TransitionRequirementState:
             current_status=saved.status,
             is_valid=True,
         )
-
-    @staticmethod
-    def _parse_target(target_state: str) -> RequirementStatus | None:
-        try:
-            return RequirementStatus(target_state)
-        except ValueError:
-            return None

@@ -1,56 +1,20 @@
 from __future__ import annotations
 
-from datetime import date
-
 from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_requirement_repository
 from app.application.ports.requirement_repository import RequirementRepository
-from app.domain.requirement.enums import BenefitKind
-from app.domain.requirement.items import (
-    Benefit,
-    Consideration,
-    Objective,
-    Restriction,
-    Risk,
-    Volumetry,
-)
-from app.domain.requirement.requirement import Requirement
-from app.domain.requirement.version import RequirementVersion
+from app.domain.requirement.enums import SignatureRole
+from app.domain.requirement.signature import Signature
 from app.main import create_app
 from tests.application.fakes import InMemoryRequirementRepository
-
-
-def _complete_version(**overrides: object) -> RequirementVersion:
-    defaults: dict[str, object] = {
-        "number": 1,
-        "document_version": "1.0",
-        "version_date": date(2026, 1, 1),
-        "title": "Titulo",
-        "change_type_id": 1,
-        "system": "SAP",
-        "current_need": "Necesidad",
-        "context_description": "Contexto",
-        "users_permissions": "Usuarios",
-        "objectives": (Objective(content="Objetivo", order=1),),
-        "considerations": (Consideration(content="Consideracion", order=1),),
-        "benefits": (
-            Benefit(content="Beneficio", order=1, kind=BenefitKind.CUALITATIVO),
-        ),
-        "restrictions": (Restriction(content="Restriccion", order=1),),
-        "volumetry": (Volumetry(content="Volumetria", order=1),),
-        "risks": (Risk(content="Riesgo", order=1),),
-    }
-    defaults.update(overrides)
-    return RequirementVersion(**defaults)  # type: ignore[arg-type]
+from tests.factories import requirement_with
 
 
 def _seed(
     repository: InMemoryRequirementRepository, **overrides: object
 ) -> tuple[int, int]:
-    requirement = repository.save(
-        Requirement(folio=1, versions=(_complete_version(**overrides),))
-    )
+    requirement = repository.save(requirement_with(**overrides))
     assert requirement.id is not None
     version = requirement.current_version()
     assert version is not None
@@ -172,3 +136,57 @@ def test_validation_missing_version_returns_404() -> None:
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "version_not_found"
+
+
+def test_validation_with_target_generado_requires_document_control() -> None:
+    repository = InMemoryRequirementRepository()
+    requirement_id, version_id = _seed(repository)
+
+    response = _client(repository).post(
+        f"/api/v1/requerimientos/{requirement_id}/versiones/{version_id}/validar",
+        json={"a_estado": "GENERADO"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["valido"] is False
+    assert any(
+        error["codigo"] == "signatures_missing"
+        and error["seccion"] == "Control documental"
+        for error in body["errores"]
+    )
+
+
+def test_validation_with_target_generado_and_signatures_is_valid() -> None:
+    repository = InMemoryRequirementRepository()
+    requirement_id, version_id = _seed(
+        repository,
+        signatures=(
+            Signature(role=SignatureRole.ELABORO, name="Ana", position="Analista"),
+            Signature(role=SignatureRole.AUTORIZO, name="Luis", position="Gerente"),
+        ),
+    )
+
+    response = _client(repository).post(
+        f"/api/v1/requerimientos/{requirement_id}/versiones/{version_id}/validar",
+        json={"a_estado": "GENERADO"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["valido"] is True
+
+
+def test_validation_unknown_target_state_returns_structured_error() -> None:
+    repository = InMemoryRequirementRepository()
+    requirement_id, version_id = _seed(repository)
+
+    response = _client(repository).post(
+        f"/api/v1/requerimientos/{requirement_id}/versiones/{version_id}/validar",
+        json={"a_estado": "NO_EXISTE"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["valido"] is False
+    assert body["errores"][0]["codigo"] == "unknown_target_state"
+    assert body["errores"][0]["path"] == "a_estado"

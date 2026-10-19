@@ -1,49 +1,14 @@
 from __future__ import annotations
 
-from datetime import date
-
 from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_requirement_repository
 from app.application.ports.requirement_repository import RequirementRepository
-from app.domain.requirement.enums import BenefitKind, RequirementStatus, SignatureRole
-from app.domain.requirement.items import (
-    Benefit,
-    Consideration,
-    Objective,
-    Restriction,
-    Risk,
-    Volumetry,
-)
-from app.domain.requirement.requirement import Requirement
+from app.domain.requirement.enums import RequirementStatus, SignatureRole
 from app.domain.requirement.signature import Signature
-from app.domain.requirement.version import RequirementVersion
 from app.main import create_app
 from tests.application.fakes import InMemoryRequirementRepository
-
-
-def _complete_version(**overrides: object) -> RequirementVersion:
-    defaults: dict[str, object] = {
-        "number": 1,
-        "document_version": "1.0",
-        "version_date": date(2026, 1, 1),
-        "title": "Titulo",
-        "change_type_id": 1,
-        "system": "SAP",
-        "current_need": "Necesidad",
-        "context_description": "Contexto",
-        "users_permissions": "Usuarios",
-        "objectives": (Objective(content="Objetivo", order=1),),
-        "considerations": (Consideration(content="Consideracion", order=1),),
-        "benefits": (
-            Benefit(content="Beneficio", order=1, kind=BenefitKind.CUALITATIVO),
-        ),
-        "restrictions": (Restriction(content="Restriccion", order=1),),
-        "volumetry": (Volumetry(content="Volumetria", order=1),),
-        "risks": (Risk(content="Riesgo", order=1),),
-    }
-    defaults.update(overrides)
-    return RequirementVersion(**defaults)  # type: ignore[arg-type]
+from tests.factories import requirement_with
 
 
 def _seed(
@@ -52,13 +17,7 @@ def _seed(
     status: RequirementStatus = RequirementStatus.BORRADOR,
     **overrides: object,
 ) -> int:
-    requirement = repository.save(
-        Requirement(
-            folio=1,
-            status=status,
-            versions=(_complete_version(**overrides),),
-        )
-    )
+    requirement = repository.save(requirement_with(status=status, **overrides))
     assert requirement.id is not None
     return requirement.id
 

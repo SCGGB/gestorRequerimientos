@@ -1,47 +1,13 @@
 from __future__ import annotations
 
-from datetime import date
-
 import pytest
 
 from app.application.errors import RequirementNotFoundError
 from app.application.use_cases.requirement import TransitionRequirementState
-from app.domain.requirement.enums import BenefitKind, RequirementStatus
-from app.domain.requirement.items import (
-    Benefit,
-    Consideration,
-    Objective,
-    Restriction,
-    Risk,
-    Volumetry,
-)
+from app.domain.requirement.enums import RequirementStatus
 from app.domain.requirement.requirement import Requirement
-from app.domain.requirement.version import RequirementVersion
 from tests.application.fakes import InMemoryRequirementRepository
-
-
-def _complete_version(**overrides: object) -> RequirementVersion:
-    defaults: dict[str, object] = {
-        "number": 1,
-        "document_version": "1.0",
-        "version_date": date(2026, 1, 1),
-        "title": "Titulo",
-        "change_type_id": 1,
-        "system": "SAP",
-        "current_need": "Necesidad",
-        "context_description": "Contexto",
-        "users_permissions": "Usuarios",
-        "objectives": (Objective(content="Objetivo", order=1),),
-        "considerations": (Consideration(content="Consideracion", order=1),),
-        "benefits": (
-            Benefit(content="Beneficio", order=1, kind=BenefitKind.CUALITATIVO),
-        ),
-        "restrictions": (Restriction(content="Restriccion", order=1),),
-        "volumetry": (Volumetry(content="Volumetria", order=1),),
-        "risks": (Risk(content="Riesgo", order=1),),
-    }
-    defaults.update(overrides)
-    return RequirementVersion(**defaults)  # type: ignore[arg-type]
+from tests.factories import requirement_with
 
 
 def _save(
@@ -50,12 +16,7 @@ def _save(
     status: RequirementStatus = RequirementStatus.BORRADOR,
     **overrides: object,
 ) -> Requirement:
-    requirement = Requirement(
-        folio=1,
-        status=status,
-        versions=(_complete_version(**overrides),),
-    )
-    return repository.save(requirement)
+    return repository.save(requirement_with(status=status, **overrides))
 
 
 @pytest.fixture()

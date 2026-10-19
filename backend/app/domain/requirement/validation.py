@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import date
 
 from app.domain.requirement.enums import RequirementStatus, SignatureRole
 from app.domain.requirement.requirement import Requirement
@@ -145,6 +146,24 @@ def _validate_general_data(
         "Datos generales",
         errors,
     )
+    _require_date(
+        version.version_date,
+        "datos_generales.fecha_version",
+        "La fecha de version del documento es obligatoria.",
+        "Datos generales",
+        errors,
+    )
+
+
+def _require_date(
+    value: date | None,
+    path: str,
+    message: str,
+    section: str,
+    errors: list[ValidationIssue],
+) -> None:
+    if value is None:
+        errors.append(_issue(path, "required_field", message, section))
 
 
 def _require_text(

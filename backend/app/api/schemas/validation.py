@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field
 from app.application.use_cases.requirement.transition_requirement_state import (
     TransitionOutcome,
 )
-from app.domain.requirement.enums import RequirementStatus
 from app.domain.requirement.validation import ValidationIssue, ValidationResult
 
 
@@ -42,7 +41,7 @@ class ValidationResultResponse(BaseModel):
 
 
 class ValidationRequest(BaseModel):
-    a_estado: RequirementStatus | None = None
+    a_estado: str | None = None
 
 
 class StateTransitionRequest(BaseModel):
