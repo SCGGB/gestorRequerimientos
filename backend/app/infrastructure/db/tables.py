@@ -11,6 +11,7 @@ from sqlalchemy import (
     ForeignKey,
     Identity,
     Index,
+    LargeBinary,
     MetaData,
     Numeric,
     String,
@@ -200,4 +201,45 @@ REQ_FIRMA = Table(
     *_audit_columns(),
     CheckConstraint("ROL IN ('ELABORO','REVISO','AUTORIZO')", name="REQ_FIRMA_ROL_CK"),
     Index("REQ_FIRMA_VERSION_IX", "VERSION_ID"),
+)
+
+DOCUMENT_FORMATS = ("DOCX", "PDF")
+
+REQ_DOCUMENTO = Table(
+    "REQ_DOCUMENTO",
+    metadata,
+    Column("ID", _ID, Identity(always=True), primary_key=True, nullable=False),
+    Column(
+        "REQUERIMIENTO_ID",
+        _ID,
+        ForeignKey("REQ_REQUERIMIENTO.ID", name="REQ_DOCUMENTO_REQUERIMIENTO_FK"),
+        nullable=False,
+    ),
+    Column(
+        "VERSION_ID",
+        _ID,
+        ForeignKey("REQ_VERSION.ID", name="REQ_DOCUMENTO_VERSION_FK"),
+        nullable=False,
+    ),
+    Column("FORMATO", String(10), nullable=False),
+    Column("PLANTILLA_VERSION", String(20), nullable=False),
+    Column("NOMBRE_ARCHIVO", String(300), nullable=False),
+    Column("MIME_TYPE", String(150), nullable=False),
+    Column("TAMANO_BYTES", _ID, nullable=False),
+    Column("CONTENIDO", LargeBinary, nullable=False),
+    Column("GENERADO_AT", TIMESTAMP, nullable=False),
+    Column("GENERADO_BY", String(200), nullable=False),
+    *_audit_columns(),
+    CheckConstraint(
+        "FORMATO IN ('DOCX','PDF')", name="REQ_DOCUMENTO_FORMATO_CK"
+    ),
+    UniqueConstraint(
+        "REQUERIMIENTO_ID",
+        "VERSION_ID",
+        "FORMATO",
+        "GENERADO_AT",
+        name="REQ_DOCUMENTO_UQ",
+    ),
+    Index("REQ_DOCUMENTO_REQUERIMIENTO_IX", "REQUERIMIENTO_ID"),
+    Index("REQ_DOCUMENTO_VERSION_IX", "VERSION_ID"),
 )
