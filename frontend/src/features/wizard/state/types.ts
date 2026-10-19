@@ -104,4 +104,5 @@ export type WizardAction =
     }
   | { type: "MARK_DIRTY"; dirty: boolean }
   | { type: "SET_SAVING"; saving: boolean }
+  | { type: "SET_STATUS"; status: RequirementStatus }
   | { type: "SET_ERROR"; error: WizardError | null };

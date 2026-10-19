@@ -364,3 +364,83 @@ test("paso 13: fallo de la vista previa muestra error y reintenta sin romper el 
   await page.getByRole("button", { name: "Reintentar" }).click();
   await expect(page.locator(".preview-sheet")).toBeVisible();
 });
+
+test("paso 13: generar deshabilitado con motivo cuando el estado no lo permite", async ({
+  page,
+}) => {
+  installBackend(page);
+  await openWizard(page);
+  await createRequirement(page);
+  await advanceTo(page, 12);
+
+  await expect(page.getByText("Aun no hay documentos generados.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generar DOCX/PDF" })).toBeDisabled();
+  await expect(
+    page.getByText(
+      "La generacion solo esta disponible cuando el requerimiento esta APROBADO.",
+    ),
+  ).toBeVisible();
+});
+
+test("paso 13: en APROBADO genera DOCX/PDF y descarga con nombre convencional", async ({
+  page,
+}) => {
+  const backend = installBackend(page);
+  await openWizard(page);
+  await createRequirement(page);
+  backend.requirementStatus = "APROBADO";
+  await advanceTo(page, 12);
+
+  const generate = page.getByRole("button", { name: "Generar DOCX/PDF" });
+  await expect(generate).toBeEnabled();
+  await generate.click();
+
+  await expect(
+    page.getByText("Documentos DOCX y PDF generados correctamente."),
+  ).toBeVisible();
+  await expect(page.getByText("T#123-v1.0.docx")).toBeVisible();
+  await expect(page.getByText("T#123-v1.0.pdf")).toBeVisible();
+  expect(backend.documents.map((document) => document.formato)).toEqual([
+    "DOCX",
+    "PDF",
+  ]);
+
+  const downloadPromise = page.waitForEvent("download");
+  await page
+    .getByRole("listitem")
+    .filter({ hasText: "T#123-v1.0.docx" })
+    .getByRole("button", { name: "Descargar" })
+    .click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("T#123-v1.0.docx");
+});
+
+test("paso 13: fallo de generacion muestra error y permite reintentar", async ({
+  page,
+}) => {
+  const backend = installBackend(page);
+  backend.documentError = {
+    status: 500,
+    code: "document_generation_failed",
+    message: "No fue posible generar el documento.",
+  };
+  await openWizard(page);
+  await createRequirement(page);
+  backend.requirementStatus = "APROBADO";
+  await advanceTo(page, 12);
+
+  await page.getByRole("button", { name: "Generar DOCX/PDF" }).click();
+  await expect(page.getByRole("alert")).toContainText(
+    "No fue posible generar el documento.",
+  );
+  await expect(
+    page.getByRole("heading", { name: "Paso 13: Revision" }),
+  ).toBeVisible();
+  await expect(page.getByText("Ticket: T#123")).toBeVisible();
+
+  backend.documentError = null;
+  await page.getByRole("button", { name: "Generar DOCX/PDF" }).click();
+  await expect(
+    page.getByText("Documentos DOCX y PDF generados correctamente."),
+  ).toBeVisible();
+});

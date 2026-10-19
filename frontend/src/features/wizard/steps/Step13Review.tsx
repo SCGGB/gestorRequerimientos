@@ -1,11 +1,16 @@
+import { useCallback, useEffect } from "react";
+import { getRequirement } from "../../../api";
 import { Badge } from "../../../components/ui/Badge";
 import { usePreview } from "../../../hooks/usePreview";
+import { useRequirementDocuments } from "../../../hooks/useRequirementDocuments";
 import { useWizard } from "../state/useWizard";
 import { WIZARD_STEPS, isComplete } from "../wizardSteps";
 import type { WizardStepStatus } from "../state/types";
 import { PreviewSheet } from "../components/preview/PreviewSheet";
 import { PreviewNotice } from "../components/preview/PreviewNotice";
 import { PreviewError } from "../components/preview/PreviewError";
+import { DocumentActions } from "../components/documents/DocumentActions";
+import { DocumentHistory } from "../components/documents/DocumentHistory";
 
 const STATUS_TONE: Record<WizardStepStatus, "success" | "info" | "danger" | "neutral"> = {
   completado: "success",
@@ -28,6 +33,28 @@ export interface Step13ReviewProps {
 export function Step13Review({ dirty }: Step13ReviewProps) {
   const { state, dispatch } = useWizard();
   const preview = usePreview(state.requirementId, state.versionId);
+  const documents = useRequirementDocuments(state.requirementId);
+
+  useEffect(() => {
+    if (state.requirementId === null) {
+      return;
+    }
+    void getRequirement(state.requirementId)
+      .then((requirement) => {
+        dispatch({ type: "SET_STATUS", status: requirement.estado });
+      })
+      .catch(() => undefined);
+  }, [state.requirementId, dispatch]);
+
+  const handleGenerate = useCallback(async (): Promise<boolean> => {
+    const generated = await documents.generate();
+    if (generated === null) {
+      return false;
+    }
+    dispatch({ type: "SET_STATUS", status: "GENERADO" });
+    preview.reload();
+    return true;
+  }, [dispatch, documents.generate, preview.reload]);
 
   return (
     <div className="space-y-4">
@@ -98,6 +125,23 @@ export function Step13Review({ dirty }: Step13ReviewProps) {
           </p>
         )}
         {preview.data !== null && <PreviewSheet document={preview.data} />}
+      </section>
+
+      <section className="space-y-3" aria-label="Generacion de documentos">
+        <h3 className="text-base font-semibold text-secondary">Documentos</h3>
+        <DocumentActions
+          status={state.estado}
+          loading={documents.loading}
+          error={documents.error}
+          onGenerate={handleGenerate}
+        />
+        <DocumentHistory
+          documents={documents.data}
+          loading={documents.loading}
+          onDownload={(documentId) => {
+            void documents.download(documentId);
+          }}
+        />
       </section>
     </div>
   );

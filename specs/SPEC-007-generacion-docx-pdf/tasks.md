@@ -159,27 +159,27 @@ Commit de fase: `SPEC-007: documentar endpoints de documentos en api.md`
 
 Commit de fase: `SPEC-007: generacion y descarga en el paso 13`
 
-- [ ] **T-019 — Tipos y cliente `api/documents.ts`** (RF-13, RF-19)
+- [x] **T-019 — Tipos y cliente `api/documents.ts`** (RF-13, RF-19)
   - `frontend/src/api/types.ts`: `GeneratedDocument`.
   - `frontend/src/api/documents.ts`: `generateDocuments`, `listDocuments`, `downloadDocument` (blob +
     `Content-Disposition`); `frontend/src/api/client.ts`: `requestBlob` reutilizando `ApiError`; export en
     `api/index.ts`.
 
-- [ ] **T-020 — Hook `useRequirementDocuments`** (RF-13, RF-14, RF-15, CA-14)
+- [x] **T-020 — Hook `useRequirementDocuments`** (RF-13, RF-14, RF-15, CA-14)
   - `frontend/src/hooks/useRequirementDocuments.ts`: `{ data, loading, error, generate, download, reload }`
     (patron de `usePreview.ts`), con descarga via `URL.createObjectURL` + `<a download>` y manejo de
     errores sin romper el wizard.
 
-- [ ] **T-021 — Componentes y estado deshabilitado** (RF-14, CA-13)
+- [x] **T-021 — Componentes y estado deshabilitado** (RF-14, CA-13)
   - `DocumentActions.tsx`: boton "Generar DOCX/PDF" y "Descargar" por documento, deshabilitados con el
     motivo visible cuando el estado no permite generar; mensajes de exito/error.
   - `DocumentHistory.tsx`: historico (formato, fecha, tamano, descarga).
 
-- [ ] **T-022 — Integracion en `Step13Review.tsx`** (RF-12, RF-13, RF-14, CA-13)
+- [x] **T-022 — Integracion en `Step13Review.tsx`** (RF-12, RF-13, RF-14, CA-13)
   - Montar `DocumentActions`/`DocumentHistory` bajo la vista previa; derivar el motivo de deshabilitado del
     `RequirementStatus`; despachar la recarga de la version/estado tras una generacion exitosa.
 
-- [ ] **T-023 — e2e (Playwright)** (CA-13, CA-14, CA-16)
+- [x] **T-023 — e2e (Playwright)** (CA-13, CA-14, CA-16)
   - `frontend/e2e/support/backend.ts`: mocks de `POST/GET .../documentos` y de `.../descarga` antes del
     fallback 404.
   - `frontend/e2e/wizard.spec.ts`: generar habilitado/deshabilitado por estado (CA-13); descarga con nombre

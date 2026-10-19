@@ -55,14 +55,7 @@ export async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { method = "GET", body, signal } = options;
-  const response = await fetch(`${API_BASE}${path}`, {
-    method,
-    headers:
-      body === undefined ? undefined : { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    signal,
-  });
+  const response = await send(path, options);
 
   if (!response.ok) {
     throw await toApiError(response);
@@ -74,4 +67,44 @@ export async function request<T>(
 
   const text = await response.text();
   return (text === "" ? undefined : JSON.parse(text)) as T;
+}
+
+export interface BlobResponse {
+  blob: Blob;
+  fileName: string;
+}
+
+export async function requestBlob(
+  path: string,
+  options: RequestOptions = {},
+): Promise<BlobResponse> {
+  const response = await send(path, options);
+
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+
+  return {
+    blob: await response.blob(),
+    fileName: fileNameFromDisposition(response.headers.get("Content-Disposition")),
+  };
+}
+
+async function send(path: string, options: RequestOptions): Promise<Response> {
+  const { method = "GET", body, signal } = options;
+  return fetch(`${API_BASE}${path}`, {
+    method,
+    headers:
+      body === undefined ? undefined : { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+    signal,
+  });
+}
+
+function fileNameFromDisposition(disposition: string | null): string {
+  if (disposition === null) {
+    return "documento";
+  }
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+  return match === null ? "documento" : decodeURIComponent(match[1]);
 }

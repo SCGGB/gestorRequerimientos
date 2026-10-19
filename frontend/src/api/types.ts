@@ -45,6 +45,20 @@ export interface AttachmentResponse {
   activo: boolean;
 }
 
+export type DocumentFormat = "DOCX" | "PDF";
+
+export interface GeneratedDocument {
+  id: number;
+  formato: DocumentFormat;
+  version_id: number;
+  plantilla_version: string;
+  nombre_archivo: string;
+  mime_type: string;
+  tamano_bytes: number;
+  generado_at: string;
+  generado_by: string;
+}
+
 export interface VersionResponse {
   id: number | null;
   numero: number;

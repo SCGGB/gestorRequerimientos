@@ -46,6 +46,15 @@ export interface BackendState {
   total: number;
   createError: { status: number; code: string; message: string } | null;
   previewError: { status: number; code: string; message: string } | null;
+  requirementStatus:
+    | "BORRADOR"
+    | "EN_REVISION"
+    | "VALIDADO"
+    | "APROBADO"
+    | "GENERADO"
+    | "CANCELADO";
+  documentError: { status: number; code: string; message: string } | null;
+  documents: GeneratedDocumentMock[];
   captured: {
     createBodies: Array<Record<string, unknown>>;
     patchBodies: Array<Record<string, unknown>>;
@@ -53,6 +62,18 @@ export interface BackendState {
     listQueries: string[];
   };
   collections: Record<CollectionKey, Item[]>;
+}
+
+export interface GeneratedDocumentMock {
+  id: number;
+  formato: "DOCX" | "PDF";
+  version_id: number;
+  plantilla_version: string;
+  nombre_archivo: string;
+  mime_type: string;
+  tamano_bytes: number;
+  generado_at: string;
+  generado_by: string;
 }
 
 export interface PreviewDocumentMock {
@@ -149,6 +170,9 @@ export function installBackend(page: Page): BackendState {
     total: 1,
     createError: null,
     previewError: null,
+    requirementStatus: "BORRADOR",
+    documentError: null,
+    documents: [],
     captured: {
       createBodies: [],
       patchBodies: [],
@@ -159,6 +183,7 @@ export function installBackend(page: Page): BackendState {
   };
 
   let nextItemId = 100;
+  let nextDocumentId = 1;
   let folio = 0;
   let ticket = "";
   let titulo = "";
@@ -199,7 +224,7 @@ export function installBackend(page: Page): BackendState {
       id: 1,
       folio,
       ticket,
-      estado: "BORRADOR",
+      estado: state.requirementStatus,
       version_actual_id: 1,
       versiones: [versionResponse()],
     };
@@ -376,6 +401,88 @@ export function installBackend(page: Page): BackendState {
         .filter((item) => item.id !== itemId)
         .map((item, index) => ({ ...item, orden: index + 1 }));
       await route.fulfill({ status: 204, body: "" });
+      return;
+    }
+
+    match = path.match(/^\/requerimientos\/(\d+)\/documentos$/);
+    if (match !== null && method === "POST") {
+      if (state.documentError !== null) {
+        await route.fulfill({
+          status: state.documentError.status,
+          json: {
+            error: {
+              code: state.documentError.code,
+              message: state.documentError.message,
+              details: null,
+            },
+          },
+        });
+        return;
+      }
+      const generatedAt = new Date().toISOString();
+      const folioActual = folio === 0 ? 123 : folio;
+      const versionArchivo = String(header.version_documento ?? "1.0");
+      const generated: GeneratedDocumentMock[] = [
+        {
+          id: nextDocumentId++,
+          formato: "DOCX",
+          version_id: 1,
+          plantilla_version: "v1",
+          nombre_archivo: `T#${folioActual}-v${versionArchivo}.docx`,
+          mime_type:
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          tamano_bytes: 12,
+          generado_at: generatedAt,
+          generado_by: "SYSTEM",
+        },
+        {
+          id: nextDocumentId++,
+          formato: "PDF",
+          version_id: 1,
+          plantilla_version: "v1",
+          nombre_archivo: `T#${folioActual}-v${versionArchivo}.pdf`,
+          mime_type: "application/pdf",
+          tamano_bytes: 12,
+          generado_at: generatedAt,
+          generado_by: "SYSTEM",
+        },
+      ];
+      state.documents = [...generated, ...state.documents];
+      state.requirementStatus = "GENERADO";
+      await route.fulfill({ status: 201, json: generated });
+      return;
+    }
+
+    if (match !== null && method === "GET") {
+      await route.fulfill({ json: state.documents });
+      return;
+    }
+
+    match = path.match(/^\/requerimientos\/(\d+)\/documentos\/(\d+)\/descarga$/);
+    if (match !== null && method === "GET") {
+      const documentId = Number(match[2]);
+      const document = state.documents.find((item) => item.id === documentId);
+      if (document === undefined) {
+        await route.fulfill({
+          status: 404,
+          json: {
+            error: {
+              code: "document_not_found",
+              message: "No existe el documento solicitado.",
+              details: null,
+            },
+          },
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        headers: {
+          "Content-Type": document.mime_type,
+          "Content-Disposition": `attachment; filename="${document.nombre_archivo}"`,
+        },
+        body: `contenido de ${document.formato}`,
+      });
       return;
     }
 

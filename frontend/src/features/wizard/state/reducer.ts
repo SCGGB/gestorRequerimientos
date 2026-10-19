@@ -214,6 +214,8 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
       return { ...state, dirty: action.dirty };
     case "SET_SAVING":
       return { ...state, saving: action.saving };
+    case "SET_STATUS":
+      return withStatuses({ ...state, estado: action.status });
     case "SET_ERROR":
       return withStatuses({ ...state, error: action.error });
   }
