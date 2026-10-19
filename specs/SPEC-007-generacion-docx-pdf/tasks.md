@@ -150,7 +150,7 @@ Commit de fase: `SPEC-007: endpoints de generacion, historico y descarga`
 
 Commit de fase: `SPEC-007: documentar endpoints de documentos en api.md`
 
-- [ ] **T-018 — Actualizar `doc/technical/api.md`** (RF-10, RF-13, RF-19)
+- [x] **T-018 — Actualizar `doc/technical/api.md`** (RF-10, RF-13, RF-19)
   - Nueva seccion `### Documentos generados (SPEC-007)` con las tres rutas y errores; resumen de
     `GeneratedDocumentResponse` en "Esquemas principales"; nota de BLOB en Oracle, de que el contenido es
     el `PreviewDocument` de SPEC-006 y de que el nombre sigue `T#<folio>-v<version>.<ext>`.

@@ -1,4 +1,4 @@
-# API - requerimientos, validación y transiciones (SPEC-003 / SPEC-005 / SPEC-006)
+# API - requerimientos, validación y transiciones (SPEC-003 / SPEC-005 / SPEC-006 / SPEC-007)
 
 ## Prefijo
 
@@ -34,6 +34,9 @@ Códigos por tipo:
 | `VersionNotFoundError` | 404 | `version_not_found` |
 | `CollectionItemNotFoundError` | 404 | `collection_item_not_found` |
 | `AttachmentNotFoundError` | 404 | `attachment_not_found` |
+| `DocumentNotFoundError` | 404 | `document_not_found` |
+| `DocumentGenerationNotAllowedError` | 409 | `document_generation_not_allowed` |
+| `DocumentGenerationError` | 500 | `document_generation_failed` |
 | Errores de validación Pydantic | 422 | `validation_error` |
 | HTTP genérico | según código | `http_error` |
 
@@ -96,8 +99,34 @@ Los campos `details` pueden incluir el detalle de validación (`RequestValidatio
   "—").
 - `firmas` (elaboró/revisó/autorizó) de la versión consultada, con `nombre` y `cargo`, o `null` por rol cuando
   no existen (ADR-007). La vista previa solo las representa; no las captura ni las modifica.
-- Este mismo `PreviewDocument` es el contrato neutral que reutilizará la generación DOCX/PDF (SPEC-007), para
+- Este mismo `PreviewDocument` es el contrato neutral que reutiliza la generación DOCX/PDF (SPEC-007), para
   mantener consistentes vista previa, DOCX y PDF. No hay cambios de modelo Oracle ni migraciones.
+
+### Documentos generados (SPEC-007)
+
+| Método | Ruta | Descripción | Éxito |
+|---|---|---|---|
+| POST | `/api/v1/requerimientos/{id}/documentos` | Genera DOCX y PDF de la versión vigente (o `version_id` opcional en el body) y registra ambos | 201 `list[GeneratedDocumentResponse]` |
+| GET | `/api/v1/requerimientos/{id}/documentos` | Histórico completo de documentos generados, sin binario | 200 `list[GeneratedDocumentResponse]` |
+| GET | `/api/v1/requerimientos/{id}/documentos/{did}/descarga` | Descarga el binario del documento | 200 binario |
+
+- La generación es **síncrona** y usa como única entrada el `PreviewDocument` de SPEC-006 compuesto desde la
+  versión persistida: vista previa, DOCX y PDF comparten contenido y versión (RF-01, RF-09).
+- Solo se permite cuando el estado y las firmas lo habilitan (ADR-005/ADR-007): estado `APROBADO` (o `GENERADO`
+  para regenerar) y firmas requeridas. En caso contrario responde `409` con `invalid_state_transition` o
+  `document_generation_not_allowed` (este último con `details` = motivos de validación) y **no registra
+  documentos ni transiciona** (CA-10).
+- Tras una generación exitosa el requerimiento pasa automáticamente a `GENERADO` (RF-12, CA-11).
+- Cada documento (DOCX y PDF) se registra como fila independiente de `REQ_DOCUMENTO` en Oracle, con el binario
+  persistido como **BLOB** (no hay rutas físicas ni object store). Una nueva generación agrega filas y no
+  sobrescribe las anteriores (RF-13, CA-12).
+- La descarga devuelve `Content-Disposition: attachment; filename="T#<folio>-v<version>.<ext>"` (por ejemplo
+  `T#1234-v3.docx`) y el `media_type` según el formato (RF-19, CA-16).
+- Body opcional del `POST`: `{ "version_id": 123 }`; si se omite, se usa la versión vigente del requerimiento.
+- Errores: `404 requirement_not_found` / `version_not_found` / `document_not_found` (documento inexistente o
+  ajeno al requerimiento); `409` transición/estado o firmas no permitidas; `422 validation_error` (body
+  inválido); `500 document_generation_failed` (fallo de render o conversión, con mensaje en español y sin
+  registrar documentos ni transicionar, RF-15).
 
 ### Colecciones
 
@@ -152,8 +181,11 @@ Los anexos son registrados únicamente como metadato (`nombre`, `tipo_mime`, `or
 
 ## Esquemas principales (resumen)
 
-- Entrada: `RequirementCreate`, `VersionUpdate`, `NewVersionRequest`, `StatusChangeRequest`, `SignatureCreate`, `CollectionItemCreate`, `BenefitCreate`, `CollectionItemUpdate`, `ReorderRequest`, `AttachmentCreate`, `AttachmentUpdate`, `ValidationRequest`, `StateTransitionRequest`.
-- Salida: `RequirementResponse`, `RequirementSummary`, `RequirementPage`, `VersionResponse`, `CollectionItemResponse`, `BenefitResponse`, `SignatureResponse`, `AttachmentResponse`, `ChangeTypeResponse`, `PositionResponse`, `ValidationErrorSchema`, `ValidationResultResponse`, `StateTransitionResponse`, `PreviewDocumentResponse` (+ `PreviewSectionResponse`, `PreviewBlockResponse`, `PreviewVersionRowResponse`, `PreviewFirmasResponse`, `PreviewSignerResponse`).
+- Entrada: `RequirementCreate`, `VersionUpdate`, `NewVersionRequest`, `StatusChangeRequest`, `SignatureCreate`, `CollectionItemCreate`, `BenefitCreate`, `CollectionItemUpdate`, `ReorderRequest`, `AttachmentCreate`, `AttachmentUpdate`, `ValidationRequest`, `StateTransitionRequest`, `GenerateDocumentsRequest`.
+- Salida: `RequirementResponse`, `RequirementSummary`, `RequirementPage`, `VersionResponse`, `CollectionItemResponse`, `BenefitResponse`, `SignatureResponse`, `AttachmentResponse`, `ChangeTypeResponse`, `PositionResponse`, `ValidationErrorSchema`, `ValidationResultResponse`, `StateTransitionResponse`, `PreviewDocumentResponse` (+ `PreviewSectionResponse`, `PreviewBlockResponse`, `PreviewVersionRowResponse`, `PreviewFirmasResponse`, `PreviewSignerResponse`), `GeneratedDocumentResponse`.
+
+`GeneratedDocumentResponse` (metadatos, nunca el binario): `id`, `formato` (`DOCX` | `PDF`), `version_id`,
+`plantilla_version`, `nombre_archivo`, `mime_type`, `tamano_bytes`, `generado_at` y `generado_by`.
 
 `RequirementSummary` (item del listado paginado) incluye `id`, `folio`, `ticket` (`T#` + folio), `titulo` (título de la versión vigente; cadena vacía si no hubiera versión), `estado` y `version_actual_id`.
 
