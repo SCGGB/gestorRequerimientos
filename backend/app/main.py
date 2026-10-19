@@ -8,6 +8,7 @@ from app.api.routers import (
     health,
     requirements,
     signatures,
+    validation,
     version,
 )
 from app.infrastructure.config import get_settings
@@ -19,6 +20,7 @@ def create_app() -> FastAPI:
     app.include_router(health.router)
     app.include_router(version.router)
     app.include_router(requirements.router)
+    app.include_router(validation.router)
     app.include_router(collections.router)
     app.include_router(signatures.router)
     app.include_router(attachments.router)
