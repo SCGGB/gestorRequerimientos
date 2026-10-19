@@ -23,6 +23,13 @@ from app.api.schemas.requirement import (
     VersionResponse,
     VersionUpdate,
 )
+from app.api.schemas.validation import (
+    StateTransitionRequest,
+    StateTransitionResponse,
+    ValidationErrorSchema,
+    ValidationRequest,
+    ValidationResultResponse,
+)
 from app.api.schemas.version import VersionResponse as AppVersionResponse
 
 __all__ = [
@@ -48,7 +55,12 @@ __all__ = [
     "RequirementSummary",
     "SignatureCreate",
     "SignatureResponse",
+    "StateTransitionRequest",
+    "StateTransitionResponse",
     "StatusChangeRequest",
+    "ValidationErrorSchema",
+    "ValidationRequest",
+    "ValidationResultResponse",
     "VersionResponse",
     "VersionUpdate",
 ]
