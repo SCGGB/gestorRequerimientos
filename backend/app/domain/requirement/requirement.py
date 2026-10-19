@@ -46,6 +46,13 @@ def _detach[ItemT: CollectionItem](items: tuple[ItemT, ...]) -> tuple[ItemT, ...
     return tuple(replace(item, id=None) for item in items if item.active)
 
 
+def allowed_transitions(
+    status: RequirementStatus,
+) -> frozenset[RequirementStatus]:
+    """Transiciones permitidas desde ``status`` segun la maquina de estados."""
+    return _ALLOWED_TRANSITIONS[status]
+
+
 @dataclass(frozen=True, slots=True)
 class Requirement:
     """Contenedor estable del requerimiento (folio, estado y version vigente)."""

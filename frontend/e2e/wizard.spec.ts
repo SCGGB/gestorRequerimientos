@@ -250,3 +250,117 @@ test("paso 13: revision resume pasos y permite navegar", async ({ page }) => {
     .click();
   await expect(page.getByRole("heading", { name: "Paso 3: Objetivos generales" })).toBeVisible();
 });
+
+test("paso 13: la vista previa refleja el DTO del backend", async ({ page }) => {
+  installBackend(page);
+  await openWizard(page);
+  await createRequirement(page);
+  await advanceTo(page, 12);
+
+  const sheet = page.locator(".preview-sheet");
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByText("Especificacion de Requerimientos de Software")).toBeVisible();
+  await expect(sheet.getByText("Titulo de prueba")).toBeVisible();
+  await expect(sheet.getByText(/T#123 · Version 1\.0/)).toBeVisible();
+
+  await expect(sheet.getByRole("heading", { name: /1\. Objetivo general/ })).toBeVisible();
+  await expect(sheet.getByText("Objetivo de la vista previa")).toBeVisible();
+  await expect(sheet.getByRole("heading", { name: /2\. Objetivos especificos/ })).toBeVisible();
+  await expect(sheet.getByRole("listitem").filter({ hasText: "Objetivo dos" })).toBeVisible();
+  await expect(sheet.getByText("No aplica")).toBeVisible();
+
+  await expect(sheet.getByRole("cell", { name: "Ana Elaboro", exact: true })).toBeVisible();
+  await expect(sheet.getByRole("cell", { name: "Ana Elaboro Analista" })).toBeVisible();
+});
+
+test("paso 13: aviso de cambios sin guardar y actualizacion tras autosave", async ({ page }) => {
+  installBackend(page);
+  await openWizard(page);
+  await createRequirement(page);
+  await advanceTo(page, 12);
+
+  await page
+    .getByRole("listitem")
+    .filter({ hasText: "Paso 12: Control documental" })
+    .getByRole("button", { name: "Ir al paso" })
+    .click();
+
+  await page.getByLabel("Nombre").first().fill("Ana Modificada");
+  await page.getByRole("button", { name: "Siguiente" }).click();
+
+  await expect(page.getByText("Hay cambios sin guardar.")).toBeVisible();
+
+  const refresh = page.getByRole("button", { name: "Actualizar vista previa" });
+  await expect(refresh).toBeVisible({ timeout: 5000 });
+
+  await refresh.click();
+  await expect(page.locator(".preview-sheet")).toBeVisible();
+});
+
+test("paso 13: imprimir invoca window.print y hay estilos de impresion", async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as unknown as { __printCalls: number }).__printCalls = 0;
+    window.print = () => {
+      (window as unknown as { __printCalls: number }).__printCalls += 1;
+    };
+  });
+
+  installBackend(page);
+  await openWizard(page);
+  await createRequirement(page);
+  await advanceTo(page, 12);
+
+  await expect(page.locator(".preview-sheet")).toBeVisible();
+  await page.getByRole("button", { name: "Imprimir" }).click();
+
+  const calls = await page.evaluate(
+    () => (window as unknown as { __printCalls: number }).__printCalls,
+  );
+  expect(calls).toBe(1);
+
+  const hasPrintStyles = await page.evaluate(() => {
+    for (const sheet of Array.from(document.styleSheets)) {
+      let rules: CSSRuleList;
+      try {
+        rules = sheet.cssRules;
+      } catch {
+        continue;
+      }
+      for (const rule of Array.from(rules)) {
+        if (rule instanceof CSSMediaRule && rule.conditionText.includes("print")) {
+          const text = rule.cssText;
+          if (text.includes(".preview-sheet")) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  });
+  expect(hasPrintStyles).toBe(true);
+});
+
+test("paso 13: fallo de la vista previa muestra error y reintenta sin romper el wizard", async ({
+  page,
+}) => {
+  const backend = installBackend(page);
+  backend.previewError = {
+    status: 500,
+    code: "internal_error",
+    message: "Fallo al componer la vista previa",
+  };
+
+  await openWizard(page);
+  await createRequirement(page);
+  await advanceTo(page, 12);
+
+  await expect(page.getByRole("alert")).toContainText("Fallo al componer la vista previa");
+  await expect(
+    page.getByRole("heading", { name: "Paso 13: Revision" }),
+  ).toBeVisible();
+  await expect(page.getByText("Ticket: T#123")).toBeVisible();
+
+  backend.previewError = null;
+  await page.getByRole("button", { name: "Reintentar" }).click();
+  await expect(page.locator(".preview-sheet")).toBeVisible();
+});

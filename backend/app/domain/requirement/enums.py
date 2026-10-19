@@ -24,3 +24,11 @@ class SignatureRole(StrEnum):
 class ActiveFlag(StrEnum):
     S = "S"
     N = "N"
+
+
+def parse_status(value: str) -> RequirementStatus | None:
+    """Convierte un valor crudo a RequirementStatus; None si no es valido."""
+    try:
+        return RequirementStatus(value)
+    except ValueError:
+        return None

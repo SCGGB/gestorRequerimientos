@@ -8,6 +8,9 @@ from app.application.ports.catalog_repository import ChangeTypeCatalog, Position
 from app.application.ports.requirement_repository import RequirementRepository
 from app.application.use_cases.check_health import CheckHealthUseCase
 from app.application.use_cases.get_version import GetVersionUseCase
+from app.application.use_cases.requirement.build_preview_document import (
+    BuildPreviewDocument,
+)
 from app.application.use_cases.requirement.change_status import ChangeStatus
 from app.application.use_cases.requirement.create_requirement import CreateRequirement
 from app.application.use_cases.requirement.freeze_version import FreezeAndAdvance
@@ -31,7 +34,13 @@ from app.application.use_cases.requirement.manage_collection import (
     UpdateCollectionItem,
 )
 from app.application.use_cases.requirement.register_signature import RegisterSignature
+from app.application.use_cases.requirement.transition_requirement_state import (
+    TransitionRequirementState,
+)
 from app.application.use_cases.requirement.update_version import UpdateVersion
+from app.application.use_cases.requirement.validate_requirement_version import (
+    ValidateRequirementVersion,
+)
 from app.infrastructure.adapters.catalogs import (
     SqlAlchemyChangeTypeCatalog,
     SqlAlchemyPositionCatalog,
@@ -90,6 +99,12 @@ def get_get_requirement_version_use_case(
     repository: Annotated[RequirementRepository, Depends(get_requirement_repository)],
 ) -> GetVersion:
     return GetVersion(repository)
+
+
+def get_build_preview_document_use_case(
+    repository: Annotated[RequirementRepository, Depends(get_requirement_repository)],
+) -> BuildPreviewDocument:
+    return BuildPreviewDocument(repository)
 
 
 def get_update_version_use_case(
@@ -174,6 +189,18 @@ def get_change_status_use_case(
     repository: Annotated[RequirementRepository, Depends(get_requirement_repository)],
 ) -> ChangeStatus:
     return ChangeStatus(repository)
+
+
+def get_validate_requirement_version_use_case(
+    repository: Annotated[RequirementRepository, Depends(get_requirement_repository)],
+) -> ValidateRequirementVersion:
+    return ValidateRequirementVersion(repository)
+
+
+def get_transition_requirement_state_use_case(
+    repository: Annotated[RequirementRepository, Depends(get_requirement_repository)],
+) -> TransitionRequirementState:
+    return TransitionRequirementState(repository)
 
 
 def get_list_change_types_use_case(

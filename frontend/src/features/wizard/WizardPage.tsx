@@ -43,7 +43,7 @@ function buildVersionPayload(
   };
 }
 
-function renderStep(stepIndex: number): ReactNode {
+function renderStep(stepIndex: number, dirty: boolean): ReactNode {
   switch (stepIndex) {
     case 0:
       return <Step01GeneralData />;
@@ -70,7 +70,7 @@ function renderStep(stepIndex: number): ReactNode {
     case 11:
       return <Step12DocumentControl />;
     case 12:
-      return <Step13Review />;
+      return <Step13Review dirty={dirty} />;
   }
 }
 
@@ -150,7 +150,7 @@ export function WizardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div data-print-hide>
         <h1 className="text-2xl font-semibold text-secondary">Nuevo Requerimiento</h1>
         <p className="mt-1 text-sm text-neutral-dark">
           Captura escalonada segun las secciones del machote institucional.
@@ -158,7 +158,10 @@ export function WizardPage() {
       </div>
 
       <section className="grid gap-6 rounded-lg border border-border bg-surface p-6 lg:grid-cols-[240px_1fr]">
-        <aside className="border-b border-border pb-6 lg:border-b-0 lg:border-r lg:pr-6">
+        <aside
+          data-print-hide
+          className="border-b border-border pb-6 lg:border-b-0 lg:border-r lg:pr-6"
+        >
           <WizardStepper steps={WIZARD_STEPS} stepStatus={stepStatus} stepIndex={stepIndex} />
         </aside>
         <div className="flex flex-col">
@@ -168,7 +171,7 @@ export function WizardPage() {
             </h2>
           </header>
           <div className="flex-1">
-            {renderStep(stepIndex)}
+            {renderStep(stepIndex, autosave.dirty)}
             {error !== null && error.stepIndex !== stepIndex && (
               <p
                 role="alert"

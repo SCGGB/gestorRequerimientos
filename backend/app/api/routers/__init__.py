@@ -5,6 +5,7 @@ from app.api.routers import (
     health,
     requirements,
     signatures,
+    validation,
     version,
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "health",
     "requirements",
     "signatures",
+    "validation",
     "version",
 ]
