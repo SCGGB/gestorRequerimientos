@@ -13,7 +13,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas font-sans text-secondary">
-      <header className="border-b border-border bg-surface">
+      <header data-print-hide className="border-b border-border bg-surface">
         <div className="flex h-16 w-full items-center gap-3 px-margin-mobile sm:px-margin">
           <div
             data-testid="brand-badge"
@@ -49,7 +49,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         </main>
       </div>
 
-      <footer className="border-t border-border bg-surface">
+      <footer data-print-hide className="border-t border-border bg-surface">
         <div className="px-margin-mobile py-4 text-xs text-neutral-dark sm:px-margin">
           Sistema de Especificacion de Requerimientos de Software
         </div>

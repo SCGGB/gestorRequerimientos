@@ -1,4 +1,4 @@
-import { isApiError } from "@/api/client";
+import { ApiError } from "../../../../api/client";
 
 export interface PreviewErrorProps {
   error: unknown;
@@ -6,19 +6,14 @@ export interface PreviewErrorProps {
 }
 
 function getErrorMessage(error: unknown): string {
-  if (isApiError(error)) {
-    const status = error.status;
-    const message = error.message || error.error?.message;
-
-    if (status === 404) {
+  if (error instanceof ApiError) {
+    if (error.status === 404) {
       return "No se encontró la vista previa para esta versión del requerimiento.";
     }
-
-    if (message) {
-      return message;
+    if (error.message) {
+      return error.message;
     }
-
-    return `Error al cargar la vista previa (${status}).`;
+    return `Error al cargar la vista previa (${error.status}).`;
   }
 
   if (error instanceof Error) {

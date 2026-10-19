@@ -80,3 +80,31 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/*
+ * Impresion (SPEC-006, RF-15): solo la hoja A4/carta. Se oculta el shell de la
+ * aplicacion y se muestra unicamente `.preview-sheet` a escala 1.
+ */
+@media print {
+  @page {
+    size: letter;
+    margin: 2.5cm 2cm;
+  }
+
+  body {
+    background-color: var(--color-surface);
+  }
+
+  [data-print-hide],
+  .preview-actions {
+    display: none !important;
+  }
+
+  .preview-sheet {
+    transform: none !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+}

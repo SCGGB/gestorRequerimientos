@@ -76,7 +76,18 @@ export function Step13Review({ dirty }: Step13ReviewProps) {
       )}
 
       <section className="space-y-3" aria-label="Vista previa del requerimiento">
-        <h3 className="text-base font-semibold text-secondary">Vista previa</h3>
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-base font-semibold text-secondary">Vista previa</h3>
+          {preview.data !== null && (
+            <button
+              type="button"
+              className="preview-actions inline-flex items-center rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-secondary hover:bg-muted"
+              onClick={() => window.print()}
+            >
+              Imprimir
+            </button>
+          )}
+        </div>
         <PreviewNotice dirty={dirty} onReload={preview.reload} />
         {preview.error !== null && (
           <PreviewError error={preview.error} onRetry={preview.reload} />

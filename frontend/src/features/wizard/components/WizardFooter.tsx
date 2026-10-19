@@ -28,7 +28,10 @@ export function WizardFooter({
   const nextLabel = stepIndex === totalSteps - 1 ? "Revisar" : "Siguiente";
 
   return (
-    <footer className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+    <footer
+      data-print-hide
+      className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"
+    >
       <div className="flex items-center gap-2">
         <Button variant="secondary" size="md" disabled={!canGoBack} onClick={onBack}>
           Anterior

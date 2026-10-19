@@ -149,7 +149,7 @@ Commit de fase: `SPEC-006: cliente, hook y componentes de la vista previa`
   - `frontend/src/features/wizard/WizardPage.tsx` (case 12) pasa `dirty={autosave.dirty}` como prop.
   - Solo lectura: sin dispatch del reducer desde la vista previa (RF-12).
 
-- [ ] **T-16 — Impresion** (RF-15, CA-11)
+- [x] **T-16 — Impresion** (RF-15, CA-11)
   - Boton "Imprimir" en la barra de acciones de la vista previa → `window.print()`.
   - Bloque `@media print` en `frontend/src/index.css`: `@page { size: letter; margin: 2.5cm 2cm; }`,
     oculta shell/sidebar/stepper/footer/acciones y muestra unicamente `.preview-sheet` a escala 1.

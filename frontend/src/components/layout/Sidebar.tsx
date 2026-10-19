@@ -37,6 +37,7 @@ export function Sidebar() {
   return (
     <nav
       aria-label="Navegacion principal"
+      data-print-hide
       className="w-full shrink-0 border-b border-border bg-surface md:w-64 md:border-b-0 md:border-r"
     >
       <ul className="flex gap-1 overflow-x-auto p-2 md:flex-col md:overflow-visible md:p-4">
