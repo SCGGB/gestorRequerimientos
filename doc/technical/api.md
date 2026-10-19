@@ -1,4 +1,4 @@
-# API - SPEC-003 (API de requerimientos)
+# API - requerimientos, validación y transiciones (SPEC-003 / SPEC-005)
 
 ## Prefijo
 
@@ -52,7 +52,30 @@ Los campos `details` pueden incluir el detalle de validación (`RequestValidatio
 | GET | `/api/v1/requerimientos/{id}/versiones/{vid}` | Detalle de versión | 200 `VersionResponse` |
 | PATCH | `/api/v1/requerimientos/{id}/versiones/{vid}` | Editar cabecera/narrativa (solo versión de trabajo en BORRADOR) | 200 `VersionResponse` |
 | POST | `/api/v1/requerimientos/{id}/versiones` | Congelar versión de trabajo y crear sucesora (copy-on-write) | 201 `RequirementResponse` |
-| POST | `/api/v1/requerimientos/{id}/estado` | Cambiar estado (transiciones permitidas por dominio) | 200 `RequirementResponse` |
+| POST | `/api/v1/requerimientos/{id}/versiones/{vid}/validar` | Validación integral de la versión (dry-run, no persiste) | 200 `ValidationResultResponse` |
+| POST | `/api/v1/requerimientos/{id}/transicionar` | Transición de estado con validación integral previa (SPEC-005) | 200 `StateTransitionResponse` |
+| POST | `/api/v1/requerimientos/{id}/estado` | Cambiar estado sin validación integral (legacy, ver nota) | 200 `RequirementResponse` |
+
+#### Validación y transición (SPEC-005)
+
+- `POST /requerimientos/{id}/versiones/{vid}/validar` es **dry-run**: no modifica estado ni contenido. Devuelve
+  `200` con `valido=false` y la lista de errores si la versión no cumple (no es un error HTTP). Body opcional
+  `{ "a_estado": "GENERADO" }` para evaluar además las precondiciones de esa transición.
+- `POST /requerimientos/{id}/transicionar` recibe `{ a_estado, motivo?, actor_id? }`. Si la transición no está
+  permitida o falla la validación integral, responde **`400`** con el cuerpo `StateTransitionResponse`
+  (`transicion_valida=false` y `errores[]`); en éxito responde `200` con el mismo esquema. Este `400` **no**
+  usa el envelope global, porque el contrato exige simultáneamente el código `400`, `transicion_valida=false`
+  y el detalle por sección/campo.
+- Códigos dentro de `errores[]`: `unknown_target_state`, `invalid_transition`, `required_field`,
+  `min_active_items`, `future_requirements_missing`, `signatures_missing`.
+- El control documental (`signers.ELABORO.nombre` y `signers.AUTORIZO.nombre`) se exige solo como
+  precondición de `APROBADO→GENERADO`; el dry-run base no exige firmas.
+- `motivo` y `actor_id` se aceptan y se registran en log, pero **no se persisten** (no existe historial de
+  transiciones; deuda documentada para una spec de auditoría futura).
+- No hay cambios de modelo Oracle ni migraciones: el estado ya vive en `REQ_REQUERIMIENTO.ESTADO`.
+
+`POST /requerimientos/{id}/estado` se conserva como **alias legacy** con su contrato original; mantiene el
+`409 invalid_state_transition` del envelope global. Para flujos nuevos usar `/transicionar`.
 
 ### Colecciones
 
@@ -107,8 +130,8 @@ Los anexos son registrados únicamente como metadato (`nombre`, `tipo_mime`, `or
 
 ## Esquemas principales (resumen)
 
-- Entrada: `RequirementCreate`, `VersionUpdate`, `NewVersionRequest`, `StatusChangeRequest`, `SignatureCreate`, `CollectionItemCreate`, `BenefitCreate`, `CollectionItemUpdate`, `ReorderRequest`, `AttachmentCreate`, `AttachmentUpdate`.
-- Salida: `RequirementResponse`, `RequirementSummary`, `RequirementPage`, `VersionResponse`, `CollectionItemResponse`, `BenefitResponse`, `SignatureResponse`, `AttachmentResponse`, `ChangeTypeResponse`, `PositionResponse`.
+- Entrada: `RequirementCreate`, `VersionUpdate`, `NewVersionRequest`, `StatusChangeRequest`, `SignatureCreate`, `CollectionItemCreate`, `BenefitCreate`, `CollectionItemUpdate`, `ReorderRequest`, `AttachmentCreate`, `AttachmentUpdate`, `ValidationRequest`, `StateTransitionRequest`.
+- Salida: `RequirementResponse`, `RequirementSummary`, `RequirementPage`, `VersionResponse`, `CollectionItemResponse`, `BenefitResponse`, `SignatureResponse`, `AttachmentResponse`, `ChangeTypeResponse`, `PositionResponse`, `ValidationErrorSchema`, `ValidationResultResponse`, `StateTransitionResponse`.
 
 `RequirementSummary` (item del listado paginado) incluye `id`, `folio`, `ticket` (`T#` + folio), `titulo` (título de la versión vigente; cadena vacía si no hubiera versión), `estado` y `version_actual_id`.
 
