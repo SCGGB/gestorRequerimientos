@@ -1,7 +1,11 @@
 import { Badge } from "../../../components/ui/Badge";
+import { usePreview } from "../../../hooks/usePreview";
 import { useWizard } from "../state/useWizard";
 import { WIZARD_STEPS, isComplete } from "../wizardSteps";
 import type { WizardStepStatus } from "../state/types";
+import { PreviewSheet } from "../components/preview/PreviewSheet";
+import { PreviewNotice } from "../components/preview/PreviewNotice";
+import { PreviewError } from "../components/preview/PreviewError";
 
 const STATUS_TONE: Record<WizardStepStatus, "success" | "info" | "danger" | "neutral"> = {
   completado: "success",
@@ -17,8 +21,13 @@ const STATUS_LABEL: Record<WizardStepStatus, string> = {
   pendiente: "Pendiente",
 };
 
-export function Step13Review() {
+export interface Step13ReviewProps {
+  dirty: boolean;
+}
+
+export function Step13Review({ dirty }: Step13ReviewProps) {
   const { state, dispatch } = useWizard();
+  const preview = usePreview(state.requirementId, state.versionId);
 
   return (
     <div className="space-y-4">
@@ -65,6 +74,20 @@ export function Step13Review() {
           Ticket: <span className="font-semibold text-secondary">{state.ticket}</span>
         </p>
       )}
+
+      <section className="space-y-3" aria-label="Vista previa del requerimiento">
+        <h3 className="text-base font-semibold text-secondary">Vista previa</h3>
+        <PreviewNotice dirty={dirty} onReload={preview.reload} />
+        {preview.error !== null && (
+          <PreviewError error={preview.error} onRetry={preview.reload} />
+        )}
+        {preview.loading && preview.data === null && (
+          <p role="status" className="text-sm text-neutral-dark">
+            Cargando vista previa...
+          </p>
+        )}
+        {preview.data !== null && <PreviewSheet document={preview.data} />}
+      </section>
     </div>
   );
 }

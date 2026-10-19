@@ -43,7 +43,7 @@ function buildVersionPayload(
   };
 }
 
-function renderStep(stepIndex: number): ReactNode {
+function renderStep(stepIndex: number, dirty: boolean): ReactNode {
   switch (stepIndex) {
     case 0:
       return <Step01GeneralData />;
@@ -70,7 +70,7 @@ function renderStep(stepIndex: number): ReactNode {
     case 11:
       return <Step12DocumentControl />;
     case 12:
-      return <Step13Review />;
+      return <Step13Review dirty={dirty} />;
   }
 }
 
@@ -168,7 +168,7 @@ export function WizardPage() {
             </h2>
           </header>
           <div className="flex-1">
-            {renderStep(stepIndex)}
+            {renderStep(stepIndex, autosave.dirty)}
             {error !== null && error.stepIndex !== stepIndex && (
               <p
                 role="alert"

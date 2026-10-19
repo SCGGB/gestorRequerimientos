@@ -101,7 +101,7 @@ Commit de fase: `SPEC-006: endpoint vista-previa con esquemas Preview`
 
 Commit de fase: `SPEC-006: documentar endpoint vista-previa en api.md`
 
-- [ ] **T-10 — Actualizar `doc/technical/api.md`** (RF-01, RF-03, RF-04)
+- [x] **T-10 — Actualizar `doc/technical/api.md`** (RF-01, RF-03, RF-04)
   - Fila del nuevo `GET /requerimientos/{id}/versiones/{vid}/vista-previa` en "Catalogo de
     endpoints" (seccion Requerimientos) y resumen de `PreviewDocumentResponse` (+ bloques, control
     de versiones y firmas) en "Esquemas principales".
@@ -112,19 +112,19 @@ Commit de fase: `SPEC-006: documentar endpoint vista-previa en api.md`
 
 Commit de fase: `SPEC-006: cliente, hook y componentes de la vista previa`
 
-- [ ] **T-11 — Tipos espejo y cliente `api/preview.ts`** (RF-01, RF-03, RF-04)
+- [x] **T-11 — Tipos espejo y cliente `api/preview.ts`** (RF-01, RF-03, RF-04)
   - `frontend/src/api/types.ts`: `PreviewDocument`, `PreviewSection`, `PreviewBlock` (union
     discriminada por `tipo`), `PreviewVersionRow`, `PreviewFirmas`, `PreviewSigner` (snake_case
     identico al JSON).
   - `frontend/src/api/preview.ts`: `getPreview(requirementId, versionId): Promise<PreviewDocument>`
     con `request<>` de `client.ts` (ApiError con envelope ya manejado); export en `api/index.ts`.
 
-- [ ] **T-12 — Hook `usePreview`** (RF-11, RF-16, CA-12)
+- [x] **T-12 — Hook `usePreview`** (RF-11, RF-16, CA-12)
   - Nuevo `frontend/src/hooks/usePreview.ts` con patron `{ data, loading, error, reload }` de
     `useRequirementsList.ts`: `AbortSignal` + flag de cancelacion, se activa cuando `requirementId` /
     `versionId` no son nulos, `reload()` re-pide la ultima version persistida.
 
-- [ ] **T-13 — Componentes de la hoja y el contenido** (RF-03, RF-04, RF-09, RF-10, RF-14, CA-09)
+- [x] **T-13 — Componentes de la hoja y el contenido** (RF-03, RF-04, RF-09, RF-10, RF-14, CA-09)
   - Nueva carpeta `frontend/src/features/wizard/components/preview/`:
     - `PreviewSheet.tsx`: hoja de tamano carta (816 px @96dpi) con padding 2.5 cm sup/inf y 2 cm
       izq/der, encabezado institucional en texto (titulo institucional, ticket `T#`,
@@ -137,13 +137,13 @@ Commit de fase: `SPEC-006: cliente, hook y componentes de la vista previa`
   - Tokens de `src/index.css` (`@theme`); sin duplicar valores de `STITCH_DESIGN.md`; sin logica de
     negocio en el frontend.
 
-- [ ] **T-14 — Aviso, error y reintento** (RF-13, RF-16, CA-10, CA-12)
+- [x] **T-14 — Aviso, error y reintento** (RF-13, RF-16, CA-10, CA-12)
   - `PreviewNotice.tsx`: estado "cambios sin guardar" (`dirty=true`) y estado "Actualizar vista
     previa" cuando `dirty` pasa de `true` a `false` (autosave completado) hasta pulsar `reload()`.
   - `PreviewError.tsx`: mensaje legible para 404 / error de red / envelope de error + boton
     "Reintentar" (`reload()`), sin romper el wizard.
 
-- [ ] **T-15 — Integracion en el paso 13** (RF-11, RF-12, RF-13, CA-09, CA-10)
+- [x] **T-15 — Integracion en el paso 13** (RF-11, RF-12, RF-13, CA-09, CA-10)
   - `frontend/src/features/wizard/steps/Step13Review.tsx`: conserva el resumen de pasos y el ticket;
     agrega la vista previa (carga inicial al activarse con `state.requirementId`/`state.versionId`).
   - `frontend/src/features/wizard/WizardPage.tsx` (case 12) pasa `dirty={autosave.dirty}` como prop.

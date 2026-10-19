@@ -97,6 +97,51 @@ export interface RequirementPage {
   size: number;
 }
 
+export type PreviewBlockType = "parrafo" | "lista" | "no_aplica";
+
+export interface PreviewBlock {
+  tipo: PreviewBlockType;
+  texto: string | null;
+  items: string[] | null;
+}
+
+export interface PreviewSection {
+  codigo: string;
+  numero: string;
+  titulo: string;
+  bloques: PreviewBlock[];
+}
+
+export interface PreviewVersionRow {
+  version: string;
+  fecha: string;
+  descripcion_cambio: string | null;
+  reviso: string | null;
+  elaboro: string | null;
+}
+
+export interface PreviewSigner {
+  nombre: string;
+  cargo: string | null;
+}
+
+export interface PreviewFirmas {
+  elaboro: PreviewSigner | null;
+  reviso: PreviewSigner | null;
+  autorizo: PreviewSigner | null;
+}
+
+export interface PreviewDocument {
+  folio: number;
+  ticket: string;
+  titulo: string;
+  version_documento: string;
+  fecha_version: string;
+  secciones: PreviewSection[];
+  control_versiones: PreviewVersionRow[];
+  firmas: PreviewFirmas;
+}
+
 export interface ChangeTypeResponse {
   id: number | null;
   codigo: string;
