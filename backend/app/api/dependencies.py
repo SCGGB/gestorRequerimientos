@@ -8,6 +8,9 @@ from app.application.ports.catalog_repository import ChangeTypeCatalog, Position
 from app.application.ports.requirement_repository import RequirementRepository
 from app.application.use_cases.check_health import CheckHealthUseCase
 from app.application.use_cases.get_version import GetVersionUseCase
+from app.application.use_cases.requirement.build_preview_document import (
+    BuildPreviewDocument,
+)
 from app.application.use_cases.requirement.change_status import ChangeStatus
 from app.application.use_cases.requirement.create_requirement import CreateRequirement
 from app.application.use_cases.requirement.freeze_version import FreezeAndAdvance
@@ -96,6 +99,12 @@ def get_get_requirement_version_use_case(
     repository: Annotated[RequirementRepository, Depends(get_requirement_repository)],
 ) -> GetVersion:
     return GetVersion(repository)
+
+
+def get_build_preview_document_use_case(
+    repository: Annotated[RequirementRepository, Depends(get_requirement_repository)],
+) -> BuildPreviewDocument:
+    return BuildPreviewDocument(repository)
 
 
 def get_update_version_use_case(

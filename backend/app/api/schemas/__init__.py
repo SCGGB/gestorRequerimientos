@@ -8,6 +8,14 @@ from app.api.schemas.collection import (
 )
 from app.api.schemas.errors import ErrorDetail, ErrorResponse
 from app.api.schemas.health import HealthResponse
+from app.api.schemas.preview import (
+    PreviewBlockResponse,
+    PreviewDocumentResponse,
+    PreviewFirmasResponse,
+    PreviewSectionResponse,
+    PreviewSignerResponse,
+    PreviewVersionRowResponse,
+)
 from app.api.schemas.requirement import (
     AttachmentResponse,
     BenefitResponse,
@@ -48,6 +56,12 @@ __all__ = [
     "HealthResponse",
     "NewVersionRequest",
     "PositionResponse",
+    "PreviewBlockResponse",
+    "PreviewDocumentResponse",
+    "PreviewFirmasResponse",
+    "PreviewSectionResponse",
+    "PreviewSignerResponse",
+    "PreviewVersionRowResponse",
     "ReorderRequest",
     "RequirementCreate",
     "RequirementPage",

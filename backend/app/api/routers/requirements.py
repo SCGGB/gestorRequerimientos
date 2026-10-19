@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 
 from app.api.dependencies import (
+    get_build_preview_document_use_case,
     get_change_status_use_case,
     get_create_requirement_use_case,
     get_freeze_and_advance_use_case,
@@ -12,6 +13,7 @@ from app.api.dependencies import (
     get_list_versions_use_case,
     get_update_version_use_case,
 )
+from app.api.schemas.preview import PreviewDocumentResponse
 from app.api.schemas.requirement import (
     NewVersionRequest,
     RequirementCreate,
@@ -23,6 +25,9 @@ from app.api.schemas.requirement import (
     VersionUpdate,
 )
 from app.application.errors import VersionNotFoundError
+from app.application.use_cases.requirement.build_preview_document import (
+    BuildPreviewDocument,
+)
 from app.application.use_cases.requirement.change_status import ChangeStatus
 from app.application.use_cases.requirement.create_requirement import CreateRequirement
 from app.application.use_cases.requirement.freeze_version import FreezeAndAdvance
@@ -103,6 +108,21 @@ def get_version(
     use_case: Annotated[GetVersion, Depends(get_get_requirement_version_use_case)],
 ) -> VersionResponse:
     return VersionResponse.from_domain(use_case.execute(requirement_id, version_id))
+
+
+@router.get(
+    "/requerimientos/{requirement_id}/versiones/{version_id}/vista-previa",
+    response_model=PreviewDocumentResponse,
+)
+def get_version_preview(
+    requirement_id: int,
+    version_id: int,
+    use_case: Annotated[
+        BuildPreviewDocument, Depends(get_build_preview_document_use_case)
+    ],
+) -> PreviewDocumentResponse:
+    document = use_case.execute(requirement_id, version_id)
+    return PreviewDocumentResponse.from_domain(document)
 
 
 @router.patch(

@@ -75,7 +75,7 @@ Commit de fase: `SPEC-006: caso de uso BuildPreviewDocument`
 
 Commit de fase: `SPEC-006: endpoint vista-previa con esquemas Preview`
 
-- [ ] **T-07 — Esquemas Pydantic** (RF-03, RF-04)
+- [x] **T-07 — Esquemas Pydantic** (RF-03, RF-04)
   - Nuevo `backend/app/api/schemas/preview.py`: `PreviewDocumentResponse`, `PreviewSectionResponse`,
     `PreviewBlockResponse` (`tipo`, `texto`, `items`), `PreviewVersionRowResponse`,
     `PreviewFirmasResponse`, `PreviewSignerResponse`, con `from_domain(...)` por clase (patron
@@ -83,7 +83,7 @@ Commit de fase: `SPEC-006: endpoint vista-previa con esquemas Preview`
     contrato de la spec.
   - Re-export en `backend/app/api/schemas/__init__.py` (`__all__`).
 
-- [ ] **T-08 — Endpoint `GET /requerimientos/{id}/versiones/{vid}/vista-previa`** (RF-01, RF-02, CA-01, CA-02)
+- [x] **T-08 — Endpoint `GET /requerimientos/{id}/versiones/{vid}/vista-previa`** (RF-01, RF-02, CA-01, CA-02)
   - Ruta en `backend/app/api/routers/requirements.py` (prefijo `/api/v1` existente), declarada
     despues de `GET /versiones/{version_id}`; `response_model=PreviewDocumentResponse`; sin logica de
     negocio: invoca el caso de uso y serializa.
@@ -91,7 +91,7 @@ Commit de fase: `SPEC-006: endpoint vista-previa con esquemas Preview`
     `Depends` (patron existente).
   - 404 sin cambios: envelope `requirement_not_found` / `version_not_found` (CA-02).
 
-- [ ] **T-09 — Pruebas de API** (CA-01, CA-02)
+- [x] **T-09 — Pruebas de API** (CA-01, CA-02)
   - Nuevo `backend/tests/api/test_preview.py` (patron `_client_with_repository` de
     `tests/api/test_requirements.py`): `200` con contrato completo, `ticket = T#<folio>` y
     `version_documento` (CA-01); `404` con envelope para requerimiento/version inexistente (CA-02);
