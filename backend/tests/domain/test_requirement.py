@@ -10,7 +10,7 @@ from app.domain.requirement.errors import (
     MultipleWorkingVersionsError,
 )
 from app.domain.requirement.items import Benefit, Objective
-from app.domain.requirement.requirement import Requirement
+from app.domain.requirement.requirement import Requirement, allowed_transitions
 from app.domain.requirement.version import RequirementVersion
 
 
@@ -63,6 +63,20 @@ def test_backward_transitions_are_allowed() -> None:
     assert in_review.change_status(RequirementStatus.BORRADOR).status is (
         RequirementStatus.BORRADOR
     )
+
+
+def test_allowed_transitions_exposes_map_including_backward() -> None:
+    assert allowed_transitions(RequirementStatus.BORRADOR) == frozenset(
+        {RequirementStatus.EN_REVISION, RequirementStatus.CANCELADO}
+    )
+    assert RequirementStatus.BORRADOR in allowed_transitions(
+        RequirementStatus.EN_REVISION
+    )
+    assert RequirementStatus.EN_REVISION in allowed_transitions(
+        RequirementStatus.VALIDADO
+    )
+    assert allowed_transitions(RequirementStatus.GENERADO) == frozenset()
+    assert allowed_transitions(RequirementStatus.CANCELADO) == frozenset()
 
 
 def test_forbidden_transition_is_rejected() -> None:
