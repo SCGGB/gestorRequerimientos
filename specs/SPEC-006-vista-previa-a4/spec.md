@@ -1,6 +1,6 @@
 # SPEC-006 - Vista previa A4 del requerimiento
 
-- Estado: aprobado
+- Estado: verificada
 - Fecha: 2026-10-19
 - Documentos aplicables: `AGENTS.md`, `doc/product/01_SPEC_FUNCIONAL.md`, `doc/documents/mapeo-machote.md`, `doc/ui/wizard-flow.md`, `doc/ui/componentes.md`, `doc/ui/design/STITCH_DESIGN.md`, `doc/technical/api.md`, `doc/development/convenciones.md`, `doc/architecture/adr/002-arquitectura-hexagonal-y-docker.md`, `doc/architecture/adr/007-firmas-segun-estado.md`
 - Depende de: SPEC-001-fundaciones, SPEC-002-modelo-dominio-requerimiento, SPEC-003-api-requerimientos, SPEC-004-wizard-captura, SPEC-005-validacion-integral-y-maquina-de-estados
