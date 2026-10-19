@@ -110,6 +110,8 @@ Los anexos son registrados únicamente como metadato (`nombre`, `tipo_mime`, `or
 - Entrada: `RequirementCreate`, `VersionUpdate`, `NewVersionRequest`, `StatusChangeRequest`, `SignatureCreate`, `CollectionItemCreate`, `BenefitCreate`, `CollectionItemUpdate`, `ReorderRequest`, `AttachmentCreate`, `AttachmentUpdate`.
 - Salida: `RequirementResponse`, `RequirementSummary`, `RequirementPage`, `VersionResponse`, `CollectionItemResponse`, `BenefitResponse`, `SignatureResponse`, `AttachmentResponse`, `ChangeTypeResponse`, `PositionResponse`.
 
+`RequirementSummary` (item del listado paginado) incluye `id`, `folio`, `ticket` (`T#` + folio), `titulo` (título de la versión vigente; cadena vacía si no hubiera versión), `estado` y `version_actual_id`.
+
 ## Referencia OpenAPI
 
 La especificación OpenAPI está disponible en `/openapi.json`. El contrato de errores y todos los endpoints arriba listados se corresponden con lo expuesto allí.

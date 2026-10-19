@@ -29,6 +29,6 @@ def list_change_types(
 @router.get("/catalogos/cargos", response_model=list[PositionResponse])
 def list_positions(
     use_case: Annotated[ListPositions, Depends(get_list_positions_use_case)],
-    rol: SignatureRole | None = Query(None, alias="rol"),
+    rol: Annotated[SignatureRole | None, Query(alias="rol")] = None,
 ) -> list[PositionResponse]:
     return [PositionResponse.from_domain(position) for position in use_case.execute(rol)]

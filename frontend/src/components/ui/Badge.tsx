@@ -1,0 +1,25 @@
+export type BadgeTone = "success" | "warning" | "danger" | "neutral" | "info";
+
+interface BadgeProps {
+  label: string;
+  tone?: BadgeTone;
+  className?: string;
+}
+
+const toneClasses: Record<BadgeTone, string> = {
+  success: "bg-success/10 text-success border-success/40",
+  warning: "bg-warning/10 text-warning border-warning/40",
+  danger: "bg-danger/10 text-danger border-danger/40",
+  neutral: "bg-muted text-neutral-dark border-border",
+  info: "bg-tertiary/10 text-tertiary border-tertiary/40",
+};
+
+export function Badge({ label, tone = "neutral", className = "" }: BadgeProps) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.05em] ${toneClasses[tone]} ${className}`}
+    >
+      {label}
+    </span>
+  );
+}

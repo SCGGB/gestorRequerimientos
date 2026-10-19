@@ -1,4 +1,4 @@
-import { StatusBadge } from "../components/StatusBadge";
+import { StatusBadge } from "../components/ui/StatusBadge";
 import { useSystemStatus } from "../hooks/useSystemStatus";
 
 export function OverviewPage() {

@@ -9,6 +9,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      "/api": { target: backendUrl, changeOrigin: true },
       "/health": { target: backendUrl, changeOrigin: true },
       "/version": { target: backendUrl, changeOrigin: true },
     },

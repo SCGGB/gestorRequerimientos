@@ -66,6 +66,29 @@ def test_list_requirements_pagination() -> None:
     assert len(data["items"]) == 1
 
 
+def test_list_requirements_includes_titulo() -> None:
+    repo = InMemoryRequirementRepository()
+    from app.application.use_cases.requirement.create_requirement import (
+        CreateRequirement,
+    )
+
+    uc = CreateRequirement(repo)
+    uc.execute(
+        folio=7,
+        title="Titulo vigente",
+        change_type_id=1,
+        system="S",
+        document_version="1.0",
+        version_date="2026-10-15",
+    )
+    client = _client_with_repository(repo)
+    r = client.get("/api/v1/requerimientos")
+    assert r.status_code == 200
+    items = r.json()["items"]
+    assert len(items) == 1
+    assert items[0]["titulo"] == "Titulo vigente"
+
+
 def test_get_requirement_not_found() -> None:
     client = _client_with_repository(InMemoryRequirementRepository())
     r = client.get("/api/v1/requerimientos/123")

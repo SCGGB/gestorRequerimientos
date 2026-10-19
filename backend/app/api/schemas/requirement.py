@@ -231,15 +231,18 @@ class RequirementSummary(BaseModel):
     id: int
     folio: int
     ticket: str
+    titulo: str
     estado: RequirementStatus
     version_actual_id: int | None = None
 
     @classmethod
     def from_domain(cls, requirement: Requirement) -> RequirementSummary:
+        current = requirement.current_version()
         return cls(
             id=requirement.id or 0,
             folio=requirement.folio,
             ticket=requirement.ticket,
+            titulo=current.title if current is not None else "",
             estado=requirement.status,
             version_actual_id=requirement.current_version_id,
         )
