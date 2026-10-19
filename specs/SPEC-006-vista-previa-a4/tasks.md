@@ -57,7 +57,7 @@ Commit de fase: `SPEC-006: dominio de composicion del PreviewDocument`
 
 Commit de fase: `SPEC-006: caso de uso BuildPreviewDocument`
 
-- [ ] **T-05 — `BuildPreviewDocument`** (RF-01, RF-02, CA-01, CA-02 backend)
+- [x] **T-05 — `BuildPreviewDocument`** (RF-01, RF-02, CA-01, CA-02 backend)
   - Nuevo `backend/app/application/use_cases/requirement/build_preview_document.py`:
     `repository.get(requirement_id)` (`RequirementNotFoundError`), `version_by_id(version_id)` o
     `VersionNotFoundError`, invoca `build_preview_document(...)` y devuelve el DTO. **Nunca `save`**:
@@ -65,7 +65,7 @@ Commit de fase: `SPEC-006: caso de uso BuildPreviewDocument`
   - Export en `use_cases/requirement/__init__.py` (`__all__`); depende solo del puerto
     `RequirementRepository` existente (mismo molde que `GetVersion` en `list_versions.py`).
 
-- [ ] **T-06 — Pruebas del caso de uso** (CA-01, CA-02, CA-07 backend)
+- [x] **T-06 — Pruebas del caso de uso** (CA-01, CA-02, CA-07 backend)
   - Nuevo `backend/tests/application/test_build_preview_document.py` con
     `InMemoryRequirementRepository`: devuelve la version pedida con encabezado correcto;
     `requirement_not_found` / `version_not_found` (CA-02); sin llamadas a `save` (RF-02);
