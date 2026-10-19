@@ -21,9 +21,9 @@ def create_app() -> FastAPI:
     app.include_router(version.router)
     app.include_router(requirements.router)
     app.include_router(validation.router)
-    app.include_router(collections.router)
     app.include_router(signatures.router)
     app.include_router(attachments.router)
+    app.include_router(collections.router)
     app.include_router(catalogs.router)
     register_exception_handlers(app)
     return app
