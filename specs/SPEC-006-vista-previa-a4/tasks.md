@@ -158,12 +158,12 @@ Commit de fase: `SPEC-006: cliente, hook y componentes de la vista previa`
 
 Commit de fase: `SPEC-006: e2e del paso 13 con vista previa`
 
-- [ ] **T-17 — Mock del endpoint en el backend falso** (RF-01, CA-09)
+- [x] **T-17 — Mock del endpoint en el backend falso** (RF-01, CA-09)
   - `frontend/e2e/support/backend.ts`: helper `previewDocument()` base y ruta
     `GET **/api/v1/requerimientos/*/versiones/*/vista-previa` registrada **antes** del fallback 404
     (linea 284), con soporte de error configurable (`createError`).
 
-- [ ] **T-18 — Tests e2e del paso 13** (CA-09, CA-10, CA-11, CA-12)
+- [x] **T-18 — Tests e2e del paso 13** (CA-09, CA-10, CA-11, CA-12)
   - `frontend/e2e/wizard.spec.ts` (usando `advanceTo(page, 12)`):
     - vista previa con encabezado, secciones y tablas coherentes con el DTO mockeado (CA-09).
     - cambios sin guardar → aviso; tras guardar → "Actualizar vista previa" recarga los datos (CA-10).

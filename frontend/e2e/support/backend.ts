@@ -45,6 +45,7 @@ const NARRATIVE_KEYS = [
 export interface BackendState {
   total: number;
   createError: { status: number; code: string; message: string } | null;
+  previewError: { status: number; code: string; message: string } | null;
   captured: {
     createBodies: Array<Record<string, unknown>>;
     patchBodies: Array<Record<string, unknown>>;
@@ -52,6 +53,83 @@ export interface BackendState {
     listQueries: string[];
   };
   collections: Record<CollectionKey, Item[]>;
+}
+
+export interface PreviewDocumentMock {
+  folio: number;
+  ticket: string;
+  titulo: string;
+  version_documento: string;
+  fecha_version: string;
+  secciones: Array<{
+    codigo: string;
+    numero: string;
+    titulo: string;
+    bloques: Array<{
+      tipo: "parrafo" | "lista" | "no_aplica";
+      texto: string | null;
+      items: string[] | null;
+    }>;
+  }>;
+  control_versiones: Array<{
+    version: string;
+    fecha: string;
+    descripcion_cambio: string | null;
+    reviso: string | null;
+    elaboro: string | null;
+  }>;
+  firmas: {
+    elaboro: { nombre: string; cargo: string | null } | null;
+    reviso: { nombre: string; cargo: string | null } | null;
+    autorizo: { nombre: string; cargo: string | null } | null;
+  };
+}
+
+export function previewDocument(
+  overrides: Partial<PreviewDocumentMock> = {},
+): PreviewDocumentMock {
+  return {
+    folio: 123,
+    ticket: "T#123",
+    titulo: "Titulo de prueba",
+    version_documento: "1.0",
+    fecha_version: "16-10-2026",
+    secciones: [
+      {
+        codigo: "objetivo",
+        numero: "1",
+        titulo: "Objetivo general",
+        bloques: [{ tipo: "parrafo", texto: "Objetivo de la vista previa", items: null }],
+      },
+      {
+        codigo: "objetivos",
+        numero: "2",
+        titulo: "Objetivos especificos",
+        bloques: [{ tipo: "lista", texto: null, items: ["Objetivo uno", "Objetivo dos"] }],
+      },
+      {
+        codigo: "beneficios",
+        numero: "3",
+        titulo: "Beneficios",
+        bloques: [{ tipo: "no_aplica", texto: "No aplica", items: null }],
+      },
+    ],
+    control_versiones: [
+      {
+        version: "1.0",
+        fecha: "16-10-2026",
+        descripcion_cambio: null,
+        reviso: null,
+        elaboro: "Ana Elaboro",
+      },
+    ],
+    firmas: {
+      elaboro: { nombre: "Ana Elaboro", cargo: "Analista" },
+      reviso: null,
+      autorizo: null,
+    },
+    ...overrides,
+  };
 }
 
 function emptyCollections(): Record<CollectionKey, Item[]> {
@@ -70,6 +148,7 @@ export function installBackend(page: Page): BackendState {
   const state: BackendState = {
     total: 1,
     createError: null,
+    previewError: null,
     captured: {
       createBodies: [],
       patchBodies: [],
@@ -224,6 +303,25 @@ export function installBackend(page: Page): BackendState {
     match = path.match(/^\/requerimientos\/(\d+)$/);
     if (match !== null && method === "GET") {
       await route.fulfill({ json: requirementResponse() });
+      return;
+    }
+
+    match = path.match(/^\/requerimientos\/(\d+)\/versiones\/(\d+)\/vista-previa$/);
+    if (match !== null && method === "GET") {
+      if (state.previewError !== null) {
+        await route.fulfill({
+          status: state.previewError.status,
+          json: {
+            error: {
+              code: state.previewError.code,
+              message: state.previewError.message,
+              details: null,
+            },
+          },
+        });
+        return;
+      }
+      await route.fulfill({ json: previewDocument({ folio: folio === 0 ? 123 : folio }) });
       return;
     }
 
