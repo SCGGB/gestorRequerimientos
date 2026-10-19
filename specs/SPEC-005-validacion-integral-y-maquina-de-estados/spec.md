@@ -61,8 +61,8 @@ CA-10 Respuesta de validación incluye `path`, `codigo`, `mensaje`, `seccion` pa
 ## Reglas de negocio y validaciones
 
 - Estados: `BORRADOR`, `EN_REVISION`, `VALIDADO`, `APROBADO`, `GENERADO`, `CANCELADO`.
-- Transiciones iniciales: `BORRADOR→EN_REVISION`, `EN_REVISION→VALIDADO`, `VALIDADO→APROBADO`, `APROBADO→GENERADO`. Cancelaciones: `BORRADOR→CANCELADO`, `EN_REVISION→CANCELADO`, `VALIDADO→CANCELADO`, `APROBADO→CANCELADO`. Cualquier otra transición es inválida.
-- Validación integral verifica: header (folio/título/tipo_cambio/sistema/version_documento/fecha_version), necesidad_actual no vacío, colecciones activas >=1: objetivos, consideraciones, beneficios, restricciones, volumetría, riesgos. Contexto: `contexto_descripcion` no vacío. Usuarios/permisos: `usuarios_permisos` no vacío. Requisitos futuros: regla condicional RF-03/RF-04. Control documental: `signers.ELABORO.nombre` y `signers.AUTORIZO.nombre` no vacíos (coherente con wizard).
+- Transiciones iniciales: `BORRADOR→EN_REVISION`, `EN_REVISION→VALIDADO`, `VALIDADO→APROBADO`, `APROBADO→GENERADO`. Retrocesos permitidos: `EN_REVISION→BORRADOR`, `VALIDADO→EN_REVISION` (coherente con SPEC-002 y el dominio existente). Cancelaciones: `BORRADOR→CANCELADO`, `EN_REVISION→CANCELADO`, `VALIDADO→CANCELADO`, `APROBADO→CANCELADO`. Cualquier otra transición es inválida.
+- Validación integral verifica: header (folio/título/tipo_cambio/sistema/version_documento/fecha_version), necesidad_actual no vacío, colecciones activas >=1: objetivos, consideraciones, beneficios, restricciones, volumetría, riesgos. Contexto: `contexto_descripcion` no vacío. Usuarios/permisos: `usuarios_permisos` no vacío. Requisitos futuros: regla condicional RF-03/RF-04. Control documental: `signers.ELABORO.nombre` y `signers.AUTORIZO.nombre` no vacíos (coherente con wizard), exigido únicamente como precondición de la transición a `GENERADO`.
 - ADR-005/007: firmas solo `APROBADO`/`GENERADO`. La máquina de estados no crea firmas.
 - Validación es idempotente (dry-run). No escribe cambios salvo la transición explícita.
 
