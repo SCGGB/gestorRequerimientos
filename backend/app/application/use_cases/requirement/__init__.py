@@ -4,10 +4,17 @@ from app.application.use_cases.requirement.build_preview_document import (
 from app.application.use_cases.requirement.change_status import ChangeStatus
 from app.application.use_cases.requirement.create_requirement import CreateRequirement
 from app.application.use_cases.requirement.freeze_version import FreezeAndAdvance
+from app.application.use_cases.requirement.generate_documents import (
+    GenerateRequirementDocuments,
+)
+from app.application.use_cases.requirement.get_document import GetRequirementDocument
 from app.application.use_cases.requirement.get_requirement import GetRequirement
 from app.application.use_cases.requirement.list_catalogs import (
     ListChangeTypes,
     ListPositions,
+)
+from app.application.use_cases.requirement.list_documents import (
+    ListRequirementDocuments,
 )
 from app.application.use_cases.requirement.list_requirements import (
     ListRequirements,
@@ -45,10 +52,13 @@ __all__ = [
     "DeleteAttachment",
     "DeleteCollectionItem",
     "FreezeAndAdvance",
+    "GenerateRequirementDocuments",
     "GetRequirement",
+    "GetRequirementDocument",
     "GetVersion",
     "ListChangeTypes",
     "ListPositions",
+    "ListRequirementDocuments",
     "ListRequirements",
     "ListVersions",
     "RegisterSignature",

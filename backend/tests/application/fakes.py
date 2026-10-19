@@ -5,14 +5,25 @@ from dataclasses import replace
 from itertools import count
 from typing import Any, TypeVar
 
-from app.application.errors import DuplicateFolioError, RequirementNotFoundError
+from app.application.errors import (
+    DocumentNotFoundError,
+    DuplicateFolioError,
+    RequirementNotFoundError,
+)
 from app.application.ports.catalog_repository import ChangeTypeCatalog, PositionCatalog
+from app.application.ports.document_converter import DocumentConverterPort
+from app.application.ports.document_renderer import DocumentRendererPort
+from app.application.ports.requirement_document_repository import (
+    RequirementDocumentRepository,
+)
 from app.application.ports.requirement_repository import (
     RequirementRepository,
     RequirementSearchFilters,
 )
 from app.domain.requirement.catalog import ChangeType, Position
+from app.domain.requirement.document import GeneratedDocument
 from app.domain.requirement.enums import SignatureRole
+from app.domain.requirement.preview import PreviewDocument
 from app.domain.requirement.requirement import Requirement
 from app.domain.requirement.version import RequirementVersion
 
@@ -113,6 +124,54 @@ class InMemoryRequirementRepository(RequirementRepository):
             else item
             for item in items
         )
+
+
+class InMemoryRequirementDocumentRepository(RequirementDocumentRepository):
+    """Repositorio de documentos en memoria con ids estables."""
+
+    def __init__(self) -> None:
+        self._documents: dict[int, GeneratedDocument] = {}
+        self._ids = count(1)
+
+    def add(self, document: GeneratedDocument) -> int:
+        document_id = next(self._ids)
+        self._documents[document_id] = replace(document, id=document_id)
+        return document_id
+
+    def get(self, document_id: int) -> GeneratedDocument:
+        try:
+            return self._documents[document_id]
+        except KeyError:
+            raise DocumentNotFoundError() from None
+
+    def list_by_requirement(self, requirement_id: int) -> Sequence[GeneratedDocument]:
+        items = [
+            document
+            for document in self._documents.values()
+            if document.requirement_id == requirement_id
+        ]
+        items.sort(key=lambda document: (document.generated_at, document.id or 0), reverse=True)
+        return tuple(replace(document, content=None) for document in items)
+
+
+class FakeDocumentRenderer(DocumentRendererPort):
+    def __init__(self, content: bytes = b"docx-bytes") -> None:
+        self._content = content
+        self.calls = 0
+
+    def render_docx(self, document: PreviewDocument, template_version: str) -> bytes:
+        self.calls += 1
+        return self._content
+
+
+class FakeDocumentConverter(DocumentConverterPort):
+    def __init__(self, content: bytes = b"pdf-bytes") -> None:
+        self._content = content
+        self.calls = 0
+
+    def to_pdf(self, docx: bytes) -> bytes:
+        self.calls += 1
+        return self._content
 
 
 class FakeChangeTypeCatalog(ChangeTypeCatalog):
