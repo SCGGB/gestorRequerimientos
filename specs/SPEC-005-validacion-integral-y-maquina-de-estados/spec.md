@@ -1,6 +1,6 @@
 # SPEC-005 - Validación integral y máquina de estados
 
-- Estado: Borrador
+- Estado: Aprobado
 - Fecha: 2026-10-16
 - Documentos aplicables: `AGENTS.md`, `doc/product/01_SPEC_FUNCIONAL.md`, `doc/architecture/adr/002-arquitectura-hexagonal-y-docker.md`, `doc/architecture/adr/005-firmas-estados.md`, `doc/architecture/adr/007-firmas-segun-estado.md`, `doc/development/convenciones.md`, `doc/technical/api.md`
 - Depende de: SPEC-001-fundaciones, SPEC-002-modelo-dominio-requerimiento, SPEC-003-api-requerimientos, SPEC-004-wizard-captura
