@@ -24,7 +24,14 @@ from app.application.use_cases.requirement.manage_collection import (
     UpdateCollectionItem,
 )
 from app.application.use_cases.requirement.register_signature import RegisterSignature
+from app.application.use_cases.requirement.transition_requirement_state import (
+    TransitionOutcome,
+    TransitionRequirementState,
+)
 from app.application.use_cases.requirement.update_version import UpdateVersion, VersionEdit
+from app.application.use_cases.requirement.validate_requirement_version import (
+    ValidateRequirementVersion,
+)
 
 __all__ = [
     "AddAttachment",
@@ -44,8 +51,11 @@ __all__ = [
     "ReorderAttachments",
     "ReorderCollectionItems",
     "RequirementPage",
+    "TransitionOutcome",
+    "TransitionRequirementState",
     "UpdateAttachment",
     "UpdateCollectionItem",
     "UpdateVersion",
+    "ValidateRequirementVersion",
     "VersionEdit",
 ]
