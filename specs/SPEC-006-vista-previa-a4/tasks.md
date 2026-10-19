@@ -175,15 +175,15 @@ Commit de fase: `SPEC-006: e2e del paso 13 con vista previa`
 
 Commit de fase: `SPEC-006: calidad (ruff, mypy, pytest, build, e2e)`
 
-- [ ] **T-19 — Lint, tipos y pruebas backend** (RF-17, CA-13)
+- [x] **T-19 — Lint, tipos y pruebas backend** (RF-17, CA-13)
   - Desde `backend/`: `ruff check .`, `mypy --strict app`, `python -m pytest` en verde; la app
     arranca sin IA (`AI_PROVIDER=none`).
 
-- [ ] **T-20 — Build frontend y e2e** (RF-14, RF-15, RF-17, CA-13)
+- [x] **T-20 — Build frontend y e2e** (RF-14, RF-15, RF-17, CA-13)
   - Desde `frontend/`: `npm run build` (`tsc -b` + vite) sin errores de tipos; `npm run test:e2e` en
     verde con los tests nuevos del paso 13.
 
-- [ ] **T-21 — Verificacion de alcance** (RF-17)
+- [x] **T-21 — Verificacion de alcance** (RF-17)
   - Confirmar que no hay tablas nuevas ni migraciones Alembic (`infrastructure/` sin cambios), ni
     dependencias nuevas en `backend/pyproject.toml` ni `frontend/package.json`, ni cambios en
     `docxtpl`/LibreOffice (SPEC-007).
