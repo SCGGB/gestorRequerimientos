@@ -15,7 +15,7 @@
 
 Commit de fase: `SPEC-006: dominio de composicion del PreviewDocument`
 
-- [ ] **T-01 — Dataclasses del DTO de renderizado** (RF-03, RF-04)
+- [x] **T-01 — Dataclasses del DTO de renderizado** (RF-03, RF-04)
   - Nuevo `backend/app/domain/requirement/preview.py` (Python puro): `PreviewDocument`,
     `PreviewSection`, `PreviewBlock` (`tipo: Literal["parrafo", "lista", "no_aplica"]`, `texto`,
     `items`), `PreviewVersionRow`, `PreviewFirmas`, `PreviewSigner`, todas frozen dataclass con
@@ -23,7 +23,7 @@ Commit de fase: `SPEC-006: dominio de composicion del PreviewDocument`
   - Helper `_format_date(d: date) -> str` → `dd-mm-aaaa` (RF-08).
   - Sin imports de FastAPI, SQLAlchemy, Pydantic ni librerias de IA/DOCX; codigos en ingles.
 
-- [ ] **T-02 — Composicion de encabezado y secciones del machote** (RF-03, RF-05, RF-06, RF-07, CA-03, CA-04, CA-05)
+- [x] **T-02 — Composicion de encabezado y secciones del machote** (RF-03, RF-05, RF-06, RF-07, CA-03, CA-04, CA-05)
   - `build_preview_document(requirement: Requirement, version: RequirementVersion) -> PreviewDocument`
     con el orden fijo de secciones del plan (1..10 incluida la contenedora `4 Beneficios Esperados`
     sin bloques y subsecciones `4.1`/`4.2`); encabezado `folio`, `requirement.ticket`, `titulo`,
@@ -38,14 +38,14 @@ Commit de fase: `SPEC-006: dominio de composicion del PreviewDocument`
     `context_error_handling` opcional, `usuarios_permisos`) → siempre bloque `parrafo`.
   - Sin secciones ajenas al machote (sin RF/no RF ni IEEE 830).
 
-- [ ] **T-03 — Control de versiones y firmas** (RF-09, RF-10, CA-06, CA-07, CA-08 backend)
+- [x] **T-03 — Control de versiones y firmas** (RF-09, RF-10, CA-06, CA-07, CA-08 backend)
   - Control de versiones: fila por cada `requirement.versions` ordenado por `number`, con
     `version`, `fecha` (`dd-mm-aaaa`), `descripcion_cambio: None`, `reviso`/`elaboro` = nombre de la
     firma del rol (`signatures_by_role`) o `None` (CA-06, CA-07).
   - Firmas de la version consultada: `elaboro`/`reviso`/`autorizo` → `PreviewSigner(nombre, cargo)`
     o `None` por rol (ADR-007); la composicion solo lee, nunca crea ni modifica firmas (CA-08).
 
-- [ ] **T-04 — Pruebas unitarias del dominio** (CA-03, CA-04, CA-05, CA-06, CA-07, CA-08)
+- [x] **T-04 — Pruebas unitarias del dominio** (CA-03, CA-04, CA-05, CA-06, CA-07, CA-08)
   - Nuevo `backend/tests/domain/test_preview.py` con `tests/factories.py::complete_version`:
     activos/orden y omision de items vacios (CA-03); coleccion vacia → `no_aplica` "No aplica" con
     titulo (CA-04); requisitos futuros false/true con texto, lista y ambos (CA-05); fechas
