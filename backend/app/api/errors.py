@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -11,6 +13,9 @@ from app.application.errors import (
     AttachmentNotFoundError,
     CollectionItemNotFoundError,
     DataConflictError,
+    DocumentGenerationError,
+    DocumentGenerationNotAllowedError,
+    DocumentNotFoundError,
     DuplicateFolioError,
     RequirementNotFoundError,
     VersionNotFoundError,
@@ -46,7 +51,7 @@ def _map_domain(exc: DomainError) -> tuple[str, int, str | None]:
     return "domain_error", status.HTTP_409_CONFLICT, None
 
 
-def _map_application(exc: ApplicationError) -> tuple[str, int, str | None]:
+def _map_application(exc: ApplicationError) -> tuple[str, int, Any]:
     if isinstance(exc, DuplicateFolioError):
         return "duplicate_folio", status.HTTP_409_CONFLICT, None
     if isinstance(exc, DataConflictError):
@@ -59,6 +64,20 @@ def _map_application(exc: ApplicationError) -> tuple[str, int, str | None]:
         return "collection_item_not_found", status.HTTP_404_NOT_FOUND, None
     if isinstance(exc, AttachmentNotFoundError):
         return "attachment_not_found", status.HTTP_404_NOT_FOUND, None
+    if isinstance(exc, DocumentNotFoundError):
+        return "document_not_found", status.HTTP_404_NOT_FOUND, None
+    if isinstance(exc, DocumentGenerationNotAllowedError):
+        return (
+            "document_generation_not_allowed",
+            status.HTTP_409_CONFLICT,
+            list(exc.issues) or None,
+        )
+    if isinstance(exc, DocumentGenerationError):
+        return (
+            "document_generation_failed",
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            None,
+        )
     return "application_error", status.HTTP_409_CONFLICT, None
 
 

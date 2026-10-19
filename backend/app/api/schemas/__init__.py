@@ -6,6 +6,10 @@ from app.api.schemas.collection import (
     CollectionItemUpdate,
     ReorderRequest,
 )
+from app.api.schemas.document import (
+    GeneratedDocumentResponse,
+    GenerateDocumentsRequest,
+)
 from app.api.schemas.errors import ErrorDetail, ErrorResponse
 from app.api.schemas.health import HealthResponse
 from app.api.schemas.preview import (
@@ -53,6 +57,8 @@ __all__ = [
     "CollectionItemUpdate",
     "ErrorDetail",
     "ErrorResponse",
+    "GenerateDocumentsRequest",
+    "GeneratedDocumentResponse",
     "HealthResponse",
     "NewVersionRequest",
     "PositionResponse",

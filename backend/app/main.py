@@ -5,6 +5,7 @@ from app.api.routers import (
     attachments,
     catalogs,
     collections,
+    documents,
     health,
     requirements,
     signatures,
@@ -25,6 +26,7 @@ def create_app() -> FastAPI:
     app.include_router(attachments.router)
     app.include_router(collections.router)
     app.include_router(catalogs.router)
+    app.include_router(documents.router)
     register_exception_handlers(app)
     return app
 

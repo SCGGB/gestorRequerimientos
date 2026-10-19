@@ -5,6 +5,11 @@ from fastapi import Depends
 from sqlalchemy.engine import Engine
 
 from app.application.ports.catalog_repository import ChangeTypeCatalog, PositionCatalog
+from app.application.ports.document_converter import DocumentConverterPort
+from app.application.ports.document_renderer import DocumentRendererPort
+from app.application.ports.requirement_document_repository import (
+    RequirementDocumentRepository,
+)
 from app.application.ports.requirement_repository import RequirementRepository
 from app.application.use_cases.check_health import CheckHealthUseCase
 from app.application.use_cases.get_version import GetVersionUseCase
@@ -14,10 +19,17 @@ from app.application.use_cases.requirement.build_preview_document import (
 from app.application.use_cases.requirement.change_status import ChangeStatus
 from app.application.use_cases.requirement.create_requirement import CreateRequirement
 from app.application.use_cases.requirement.freeze_version import FreezeAndAdvance
+from app.application.use_cases.requirement.generate_documents import (
+    GenerateRequirementDocuments,
+)
+from app.application.use_cases.requirement.get_document import GetRequirementDocument
 from app.application.use_cases.requirement.get_requirement import GetRequirement
 from app.application.use_cases.requirement.list_catalogs import (
     ListChangeTypes,
     ListPositions,
+)
+from app.application.use_cases.requirement.list_documents import (
+    ListRequirementDocuments,
 )
 from app.application.use_cases.requirement.list_requirements import ListRequirements
 from app.application.use_cases.requirement.list_versions import GetVersion, ListVersions
@@ -46,6 +58,13 @@ from app.infrastructure.adapters.catalogs import (
     SqlAlchemyPositionCatalog,
 )
 from app.infrastructure.adapters.database_health import SqlAlchemyDatabaseHealthAdapter
+from app.infrastructure.adapters.document_converter import (
+    LibreofficeDocumentConverter,
+)
+from app.infrastructure.adapters.document_renderer import DocxtplDocumentRenderer
+from app.infrastructure.adapters.requirement_document_repository import (
+    SqlAlchemyRequirementDocumentRepository,
+)
 from app.infrastructure.adapters.requirement_repository import (
     SqlAlchemyRequirementRepository,
 )
@@ -213,3 +232,54 @@ def get_list_positions_use_case(
     catalog: Annotated[PositionCatalog, Depends(get_position_catalog)],
 ) -> ListPositions:
     return ListPositions(catalog)
+
+
+def get_document_renderer() -> DocumentRendererPort:
+    return DocxtplDocumentRenderer(get_settings().templates_dir)
+
+
+def get_document_converter() -> DocumentConverterPort:
+    settings = get_settings()
+    return LibreofficeDocumentConverter(
+        settings.libreoffice_binary,
+        settings.document_generation_timeout_seconds,
+    )
+
+
+def get_requirement_document_repository() -> RequirementDocumentRepository:
+    return SqlAlchemyRequirementDocumentRepository(get_engine())
+
+
+def get_generate_documents_use_case(
+    repository: Annotated[RequirementRepository, Depends(get_requirement_repository)],
+    document_repository: Annotated[
+        RequirementDocumentRepository, Depends(get_requirement_document_repository)
+    ],
+    renderer: Annotated[DocumentRendererPort, Depends(get_document_renderer)],
+    converter: Annotated[DocumentConverterPort, Depends(get_document_converter)],
+) -> GenerateRequirementDocuments:
+    return GenerateRequirementDocuments(
+        repository,
+        document_repository,
+        renderer,
+        converter,
+        template_version=get_settings().document_template_version,
+    )
+
+
+def get_get_document_use_case(
+    repository: Annotated[RequirementRepository, Depends(get_requirement_repository)],
+    document_repository: Annotated[
+        RequirementDocumentRepository, Depends(get_requirement_document_repository)
+    ],
+) -> GetRequirementDocument:
+    return GetRequirementDocument(repository, document_repository)
+
+
+def get_list_documents_use_case(
+    repository: Annotated[RequirementRepository, Depends(get_requirement_repository)],
+    document_repository: Annotated[
+        RequirementDocumentRepository, Depends(get_requirement_document_repository)
+    ],
+) -> ListRequirementDocuments:
+    return ListRequirementDocuments(repository, document_repository)
