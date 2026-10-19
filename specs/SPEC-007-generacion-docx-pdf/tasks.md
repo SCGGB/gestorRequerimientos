@@ -189,20 +189,23 @@ Commit de fase: `SPEC-007: generacion y descarga en el paso 13`
 
 Commit de fase: `SPEC-007: calidad e integracion (BLOB y conversion PDF)`
 
-- [ ] **T-024 — Lint, tipos y unitarias backend** (RF-16, CA-15)
+- [x] **T-024 — Lint, tipos y unitarias backend** (RF-16, CA-15)
   - Desde `backend/`: `ruff check .`, `mypy --strict app`, `python -m pytest` en verde; app sin IA
-    (`AI_PROVIDER=none`).
+    (`AI_PROVIDER=none`). Evidencia: `ruff` OK, `mypy` 86 archivos sin errores, 181 unitarias en verde
+    (`gestor-req-dev`).
 
-- [ ] **T-025 — Integracion: BLOB Oracle y conversion DOCX→PDF** (RF-09, RF-10, CA-02, CA-15)
+- [x] **T-025 — Integracion: BLOB Oracle y conversion DOCX→PDF** (RF-09, RF-10, CA-02, CA-15)
   - `tests/integration/test_requirement_document_repository.py`: round-trip de BLOB y migracion `0003` con
-    Testcontainers.
+    Testcontainers. Evidencia: 5 pruebas en verde.
   - `tests/integration/test_document_conversion.py`: DOCX real → PDF con LibreOffice; PDF no vacio y
-    secciones/textos clave equivalentes (CA-02). Marcadas `integration`.
+    secciones/textos clave equivalentes (CA-02). Marcadas `integration`. Evidencia: 2 pruebas en verde con
+    `pdftotext` (`gestor-req-integration`); suite de integracion completa 26 en verde.
 
-- [ ] **T-026 — Build frontend, e2e y verificacion de alcance** (RF-16, CA-15)
-  - Desde `frontend/`: `npm run build` y `npm run test:e2e` en verde.
+- [x] **T-026 — Build frontend, e2e y verificacion de alcance** (RF-16, CA-15)
+  - Desde `frontend/`: `npm run build` y `npm run test:e2e` en verde. Evidencia: build OK, 22/22 e2e.
   - Confirmar dependencia unica nueva (`docxtpl`/`python-docx`), sin cambios en `StoragePort`, y deuda de
-    logotipos registrada.
+    logotipos registrada. Evidencia: unico cambio en `pyproject.toml` es `docxtpl>=0.19`; `package.json`
+    sin cambios; `StoragePort` intacto (solo se agregan puertos nuevos).
 
 ## Trazabilidad CA → Tareas
 
