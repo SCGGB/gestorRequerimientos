@@ -16,14 +16,14 @@
 
 Commit de fase: `SPEC-005: dominio validador integral y acceso a transiciones`
 
-- [ ] **T-01 — Tipos de resultado de validacion** (RF-02, RF-10, CA-10)
+- [x] **T-01 — Tipos de resultado de validacion** (RF-02, RF-10, CA-10)
   - Nuevo `backend/app/domain/requirement/validation.py` (Python puro): `ValidationIssue` (frozen
     dataclass: `path`, `code`, `message`, `section`) y `ValidationResult` (frozen dataclass:
     `errors: tuple[ValidationIssue, ...]`, `warnings: tuple[ValidationIssue, ...]`, propiedad
     `is_valid = not errors`).
   - Sin imports de FastAPI, SQLAlchemy ni librerias de IA/DOCX; codigos en ingles, mensajes/secciones en espanol.
 
-- [ ] **T-02 — Validador integral de la version vigente** (RF-02, RF-03, RF-04, CA-01, CA-02, CA-03, CA-04)
+- [x] **T-02 — Validador integral de la version vigente** (RF-02, RF-03, RF-04, CA-01, CA-02, CA-03, CA-04)
   - `validate_requirement(requirement: Requirement, *, target_state: RequirementStatus | None = None) -> ValidationResult`.
   - Lee la version vigente (`current_version()`); si no existe, error estructurado `no_current_version`.
   - Reglas base (tabla del plan): Datos generales (`title`, `change_type_id`, `system`,
@@ -39,7 +39,7 @@ Commit de fase: `SPEC-005: dominio validador integral y acceso a transiciones`
     (no bloquea).
   - Cada error incluye `path`, `code`, `message`, `section` (CA-01, CA-02, CA-10).
 
-- [ ] **T-03 — Control documental condicionado a la transicion** (RF-02, RF-08, CA-08)
+- [x] **T-03 — Control documental condicionado a la transicion** (RF-02, RF-08, CA-08)
   - En `validation.py`: si `target_state = GENERADO`, exigir firmas `ELABORO` y `AUTORIZO` con
     `nombre` no vacio sobre la version vigente → error `signatures_missing`
      (`path="signers.ELABORO.nombre"`/`signers.AUTORIZO.nombre`, seccion "Control documental").
@@ -47,7 +47,7 @@ Commit de fase: `SPEC-005: dominio validador integral y acceso a transiciones`
     `REVISO` no se exige (coherente con el wizard).
   - No se crean firmas: solo se valida su existencia (ADR-007).
 
-- [ ] **T-04 — Acceso publico al mapa de transiciones** (RF-01, RF-07, CA-05, CA-07)
+- [x] **T-04 — Acceso publico al mapa de transiciones** (RF-01, RF-07, CA-05, CA-07)
   - Ajuste minimo en `backend/app/domain/requirement/requirement.py`: agregar
     `allowed_transitions(status: RequirementStatus) -> frozenset[RequirementStatus]` sobre
     `_ALLOWED_TRANSITIONS`.
@@ -55,14 +55,14 @@ Commit de fase: `SPEC-005: dominio validador integral y acceso a transiciones`
     `VALIDADO→EN_REVISION`; decision Q-1) y conservar `change_status(target)` /
     `InvalidStateTransitionError` como mecanismo de rechazo del dominio.
 
-- [ ] **T-05 — Pruebas unitarias del validador** (CA-01, CA-02, CA-03, CA-04, CA-10)
+- [x] **T-05 — Pruebas unitarias del validador** (CA-01, CA-02, CA-03, CA-04, CA-10)
   - Nuevo `backend/tests/domain/test_validation.py`: cabecera incompleta → `is_valid=false` con
     errores por seccion/campo (CA-01); completo → `is_valid=true` (CA-02); `aplica=false` sin errores
     (CA-03); `aplica=true` sin texto/activos → error en "Requisitos futuros" (CA-04); conteo solo de
     activos; advertencia de consistencia; control documental solo con `target_state=GENERADO`;
     estructura de cada error (`path`, `codigo`, `seccion`) (CA-10). Sin base de datos.
 
-- [ ] **T-06 — Cobertura de `allowed_transitions()`** (RF-01, CA-06)
+- [x] **T-06 — Cobertura de `allowed_transitions()`** (RF-01, CA-06)
   - Ampliar `backend/tests/domain/test_requirement.py` (sin alterar los tests existentes de
     retrocesos) con aserciones de `allowed_transitions()` incluyendo
     `EN_REVISION→BORRADOR` y `VALIDADO→EN_REVISION`.
@@ -71,13 +71,13 @@ Commit de fase: `SPEC-005: dominio validador integral y acceso a transiciones`
 
 Commit de fase: `SPEC-005: casos de uso validar version y transicionar estado`
 
-- [ ] **T-07 — `ValidateRequirementVersion`** (RF-05, RF-09, CA-09)
+- [x] **T-07 — `ValidateRequirementVersion`** (RF-05, RF-09, CA-09)
   - Nuevo `backend/app/application/use_cases/requirement/validate_requirement_version.py`: `repo.get(id)`
     (`RequirementNotFoundError`), verifica `version_by_id(vid)` (`VersionNotFoundError`), ejecuta
     `validate_requirement(..., target_state=...)` y devuelve `ValidationResult`. **No persiste** (dry-run).
   - Depende solo del puerto `RequirementRepository.get/save` existente; sin puertos ni adaptadores nuevos.
 
-- [ ] **T-08 — `TransitionRequirementState`** (RF-06, RF-07, CA-05, CA-06, CA-07)
+- [x] **T-08 — `TransitionRequirementState`** (RF-06, RF-07, CA-05, CA-06, CA-07)
   - Nuevo `backend/app/application/use_cases/requirement/transition_requirement_state.py`:
     `repo.get(id)`; parsea `a_estado` (`str` desconocido → `unknown_target_state`, sin excepcion);
     transicion no permitida por el mapa → `invalid_transition`; en avance
@@ -90,12 +90,12 @@ Commit de fase: `SPEC-005: casos de uso validar version y transicionar estado`
     validacion integral previa.
   - No modifica `ChangeStatus` (SPEC-003), que queda como legacy (Q-4).
 
-- [ ] **T-09 — Pruebas de `ValidateRequirementVersion`** (CA-09)
+- [x] **T-09 — Pruebas de `ValidateRequirementVersion`** (CA-09)
   - Nuevo `backend/tests/application/test_validate_requirement_version.py` (con
     `InMemoryRequirementRepository` de `tests/application/fakes.py`): dry-run no persiste ni cambia
     estado (CA-09); version inexistente → `VersionNotFoundError`.
 
-- [ ] **T-10 — Pruebas de `TransitionRequirementState`** (CA-05, CA-06, CA-07)
+- [x] **T-10 — Pruebas de `TransitionRequirementState`** (CA-05, CA-06, CA-07)
   - Nuevo `backend/tests/application/test_transition_requirement_state.py`: avance valido persiste
     `estado_anterior/estado_actual` (CA-06); `BORRADOR→APROBADO` → `transicion_valida=false` con
     `invalid_transition` (CA-05); `a_estado` desconocido → `unknown_target_state` (CA-07); avance
@@ -106,7 +106,7 @@ Commit de fase: `SPEC-005: casos de uso validar version y transicionar estado`
 
 Commit de fase: `SPEC-005: endpoints /validar y /transicionar con esquemas`
 
-- [ ] **T-11 — Esquemas de validacion y transicion** (RF-05, RF-06, RF-10, CA-10)
+- [x] **T-11 — Esquemas de validacion y transicion** (RF-05, RF-06, RF-10, CA-10)
   - Nuevo `backend/app/api/schemas/validation.py`:
     `ValidationErrorSchema { path, codigo, mensaje, seccion }` con `from_domain(issue)`;
     `ValidationResultResponse { valido, errores[], advertencias[] }` con `from_domain(result)`;
@@ -117,13 +117,13 @@ Commit de fase: `SPEC-005: endpoints /validar y /transicionar con esquemas`
     `from_outcome(outcome)`.
   - Traduccion dominio (ingles) ↔ API (espanol) siguiendo el patron de los esquemas existentes.
 
-- [ ] **T-12 — Endpoint `POST /requerimientos/{id}/versiones/{vid}/validar`** (RF-05, RF-09, CA-01, CA-02, CA-09, CA-10)
+- [x] **T-12 — Endpoint `POST /requerimientos/{id}/versiones/{vid}/validar`** (RF-05, RF-09, CA-01, CA-02, CA-09, CA-10)
   - Nuevo `backend/app/api/routers/validation.py` (prefijo `/api/v1`, tag `validacion`), sin logica de
     negocio: valida entrada, invoca `ValidateRequirementVersion`, serializa.
   - Exito `200 ValidationResultResponse` incluso con `valido=false` (no es error de HTTP); fallo
     `404` envelope `requirement_not_found` / `version_not_found`.
 
-- [ ] **T-13 — Endpoint `POST /requerimientos/{id}/transicionar`** (RF-06, RF-07, CA-05, CA-06, CA-07)
+- [x] **T-13 — Endpoint `POST /requerimientos/{id}/transicionar`** (RF-06, RF-07, CA-05, CA-06, CA-07)
   - En `validation.py`: `200 StateTransitionResponse` con `transicion_valida=true`; `400` con cuerpo
     `StateTransitionResponse` (`transicion_valida=false`, `errores=[...]`; codigos
     `unknown_target_state`, `invalid_transition`, `required_field`, `min_active_items`,
@@ -131,7 +131,7 @@ Commit de fase: `SPEC-005: endpoints /validar y /transicionar con esquemas`
   - El `400` usa el cuerpo de la respuesta (no el envelope global) por exigencia de CA-05 + RF-10
     (decision Q-2, documentada).
 
-- [ ] **T-14 — Cableado y conservacion del endpoint legacy** (RF-07, CA-05, CA-08)
+- [x] **T-14 — Cableado y conservacion del endpoint legacy** (RF-07, CA-05, CA-08)
   - `backend/app/api/dependencies.py`: fabricas `get_validate_requirement_version_use_case` y
     `get_transition_requirement_state_use_case` con puertos por `Depends` (patron existente).
   - Registrar el router nuevo en `main.py`/`api/routers/__init__.py` y los esquemas en
@@ -142,7 +142,7 @@ Commit de fase: `SPEC-005: endpoints /validar y /transicionar con esquemas`
 
 Commit de fase: `SPEC-005: documentar endpoints validar/transicionar en api.md`
 
-- [ ] **T-15 — Actualizar `doc/technical/api.md`** (RF-05, RF-06, RF-07, RF-08, RF-09, RF-10)
+- [x] **T-15 — Actualizar `doc/technical/api.md`** (RF-05, RF-06, RF-07, RF-08, RF-09, RF-10)
   - Documentar `POST /requerimientos/{id}/versiones/{vid}/validar` (dry-run, 200 aunque `valido=false`)
     y `POST /requerimientos/{id}/transicionar`; esquemas `ValidationResultResponse`,
     `ValidationErrorSchema`, `StateTransitionRequest`/`StateTransitionResponse`.
@@ -155,17 +155,17 @@ Commit de fase: `SPEC-005: documentar endpoints validar/transicionar en api.md`
 
 Commit de fase: `SPEC-005: pruebas de API de validacion y transicion`
 
-- [ ] **T-16 — Pruebas de `POST /validar`** (CA-01, CA-02, CA-09, CA-10)
+- [x] **T-16 — Pruebas de `POST /validar`** (CA-01, CA-02, CA-09, CA-10)
   - Nuevo `backend/tests/api/test_validation.py` (`TestClient` + `dependency_overrides` con fakes,
     patron de `tests/api/test_requirements.py`): `valido=false` con `path`/`codigo`/`mensaje`/`seccion`
     por error (CA-01, CA-10), `valido=true` (CA-02), `404` de requerimiento/version, dry-run sin cambio
     de estado (CA-09).
 
-- [ ] **T-17 — Pruebas de `POST /transicionar`** (CA-05, CA-06, CA-07)
+- [x] **T-17 — Pruebas de `POST /transicionar`** (CA-05, CA-06, CA-07)
   - Nuevo `backend/tests/api/test_transition.py`: `400` con `transicion_valida=false` (CA-05); `200` y
     estado reflejado via `GET` (CA-06); `400` con `unknown_target_state` (CA-07); `404`.
 
-- [ ] **T-18 — Regresion de compatibilidad** (CA-08)
+- [x] **T-18 — Regresion de compatibilidad** (CA-08)
   - Confirmar (sin modificar) que las pruebas existentes de firmas (`signature_not_allowed`) y del
     endpoint legacy `POST /estado` (`409`) siguen en verde; agregar el caso minimo necesario solo si
     falta cobertura del alias.
@@ -174,11 +174,11 @@ Commit de fase: `SPEC-005: pruebas de API de validacion y transicion`
 
 Commit de fase: `SPEC-005: calidad (ruff, mypy, pytest)`
 
-- [ ] **T-19 — Lint, tipos y pruebas** (RF-02..RF-09)
+- [x] **T-19 — Lint, tipos y pruebas** (RF-02..RF-09)
   - Desde `backend/`: `ruff check .`, `mypy --strict app`, `python -m pytest` en verde. Confirmar que
     `GET /openapi.json` expone los endpoints nuevos y que la app arranca sin IA (`AI_PROVIDER=none`).
 
-- [ ] **T-20 — Verificacion de alcance** (RF-01, RF-08)
+- [x] **T-20 — Verificacion de alcance** (RF-01, RF-08)
   - Confirmar que no hay cambios de modelo Oracle ni migraciones Alembic nuevas
     (`alembic upgrade head` sin revisiones pendientes), que `infrastructure/` no se modifica y que no se
     incorporaron dependencias nuevas.
