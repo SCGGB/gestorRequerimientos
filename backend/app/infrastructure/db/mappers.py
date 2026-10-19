@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import Any, cast
 
 from app.domain.requirement.attachment import Attachment
 from app.domain.requirement.catalog import ChangeType, Position
+from app.domain.requirement.document import DocumentFormat, GeneratedDocument
 from app.domain.requirement.enums import BenefitKind, RequirementStatus, SignatureRole
 from app.domain.requirement.items import (
     Benefit,
@@ -350,4 +351,52 @@ def requirement_from_row(
         status=RequirementStatus(str(row["ESTADO"])),
         current_version_id=_optional_int(row.get("VERSION_ACTUAL_ID")),
         versions=tuple(versions),
+    )
+
+
+# --- Documentos generados --------------------------------------------------
+
+
+def _blob_to_bytes(value: Any) -> bytes | None:
+    if value is None:
+        return None
+    if isinstance(value, bytes):
+        return value
+    reader = getattr(value, "read", None)
+    if callable(reader):
+        return bytes(reader())
+    return bytes(value)
+
+
+def generated_document_to_row(document: GeneratedDocument) -> dict[str, Any]:
+    return {
+        "REQUERIMIENTO_ID": document.requirement_id,
+        "VERSION_ID": document.version_id,
+        "FORMATO": document.format,
+        "PLANTILLA_VERSION": document.template_version,
+        "NOMBRE_ARCHIVO": document.file_name,
+        "MIME_TYPE": document.mime_type,
+        "TAMANO_BYTES": document.size_bytes,
+        "CONTENIDO": document.content,
+        "GENERADO_AT": document.generated_at,
+        "GENERADO_BY": document.generated_by,
+    }
+
+
+def generated_document_from_row(
+    row: Row, *, with_content: bool
+) -> GeneratedDocument:
+    content = _blob_to_bytes(row.get("CONTENIDO")) if with_content else None
+    return GeneratedDocument(
+        id=_optional_int(row.get("ID")),
+        requirement_id=int(row["REQUERIMIENTO_ID"]),
+        version_id=int(row["VERSION_ID"]),
+        format=cast(DocumentFormat, str(row["FORMATO"])),
+        template_version=str(row["PLANTILLA_VERSION"]),
+        file_name=str(row["NOMBRE_ARCHIVO"]),
+        mime_type=str(row["MIME_TYPE"]),
+        size_bytes=int(row["TAMANO_BYTES"]),
+        generated_at=row["GENERADO_AT"],
+        generated_by=str(row["GENERADO_BY"]),
+        content=content,
     )

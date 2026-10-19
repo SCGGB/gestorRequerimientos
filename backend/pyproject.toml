@@ -15,6 +15,7 @@ dependencies = [
     "sqlalchemy>=2.0.36",
     "alembic>=1.14",
     "oracledb>=2.5",
+    "docxtpl>=0.19",
 ]
 
 [project.optional-dependencies]
@@ -53,7 +54,7 @@ warn_unused_configs = true
 warn_redundant_casts = true
 
 [[tool.mypy.overrides]]
-module = ["alembic.*", "testcontainers.*"]
+module = ["alembic.*", "testcontainers.*", "docxtpl.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

@@ -61,6 +61,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/app:/app/app:ro
+      - ./templates:/app/templates:ro
     depends_on:
       oracle:
         condition: service_healthy

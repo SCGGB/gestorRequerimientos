@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     jwt_secret: SecretStr = SecretStr("change_me")
     ai_provider: str = "none"
 
+    templates_dir: str = "/app/templates"
+    document_template_version: str = "v1"
+    libreoffice_binary: str = "soffice"
+    document_generation_timeout_seconds: int = 60
+    document_max_bytes: int = 25_000_000
+
 
 @lru_cache
 def get_settings() -> Settings:
