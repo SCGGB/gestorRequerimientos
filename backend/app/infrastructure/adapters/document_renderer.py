@@ -29,7 +29,6 @@ _COLLECTION_CODES = (
     "restricciones",
     "volumetria",
     "riesgos",
-    "requisitos_futuros",
 )
 
 
@@ -69,6 +68,9 @@ def build_template_context(document: PreviewDocument) -> dict[str, Any]:
         context[code] = _paragraph_text(sections.get(code))
     for code in _COLLECTION_CODES:
         context[code] = _list_items(sections.get(code))
+    context["requisitos_futuros"] = _future_requirement_entries(
+        sections.get("requisitos_futuros")
+    )
     return context
 
 
@@ -88,6 +90,23 @@ def _list_items(section: PreviewSection | None) -> list[Listing]:
         if block.type == "lista":
             return [Listing(item) for item in block.items]
     return []
+
+
+def _future_requirement_entries(section: PreviewSection | None) -> list[Listing]:
+    """Requisitos futuros combinan texto libre y elementos activos (RF-07).
+
+    La plantilla imprime "No Aplica." cuando la lista queda vacia, por lo que el
+    texto capturado debe entrar como un elemento mas para no perderlo.
+    """
+    if section is None:
+        return []
+    entries: list[Listing] = []
+    for block in section.blocks:
+        if block.type == "parrafo" and block.text and block.text.strip():
+            entries.append(Listing(block.text))
+        elif block.type == "lista":
+            entries.extend(Listing(item) for item in block.items)
+    return entries
 
 
 def _context_blocks(section: PreviewSection | None) -> dict[str, Any]:

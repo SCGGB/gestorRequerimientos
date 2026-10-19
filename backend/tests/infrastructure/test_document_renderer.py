@@ -5,6 +5,7 @@ from datetime import date
 from pathlib import Path
 
 from app.domain.requirement.enums import SignatureRole
+from app.domain.requirement.items import FutureRequirementItem
 from app.domain.requirement.preview import PreviewDocument, build_preview_document
 from app.domain.requirement.signature import Signature
 from app.infrastructure.adapters.document_renderer import DocxtplDocumentRenderer
@@ -77,6 +78,38 @@ def test_render_future_requirements_not_applicable() -> None:
     part = _part(_render(_document()), "word/document.xml")
 
     assert "No Aplica." in part
+
+
+def test_render_future_requirements_includes_text_without_items() -> None:
+    version = complete_version(
+        future_requirements_applies=True,
+        future_requirements_text="Texto futuro",
+        future_requirements_items=(),
+    )
+    document = build_preview_document(requirement_with(version), version)
+
+    part = _part(_render(document), "word/document.xml")
+
+    assert "Texto futuro" in part
+    assert "No Aplica." not in part
+
+
+def test_render_future_requirements_includes_text_and_ordered_items() -> None:
+    version = complete_version(
+        future_requirements_applies=True,
+        future_requirements_text="Texto futuro",
+        future_requirements_items=(
+            FutureRequirementItem(content="Segundo", order=2),
+            FutureRequirementItem(content="Primero", order=1),
+        ),
+    )
+    document = build_preview_document(requirement_with(version), version)
+
+    part = _part(_render(document), "word/document.xml")
+
+    assert "Texto futuro" in part
+    assert part.index("Primero") < part.index("Segundo")
+    assert "No Aplica." not in part
 
 
 def test_render_includes_version_control_and_signatures() -> None:

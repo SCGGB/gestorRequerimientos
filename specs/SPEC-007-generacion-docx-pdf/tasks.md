@@ -207,15 +207,22 @@ Commit de fase: `SPEC-007: calidad e integracion (BLOB y conversion PDF)`
     logotipos registrada. Evidencia: unico cambio en `pyproject.toml` es `docxtpl>=0.19`; `package.json`
     sin cambios; `StoragePort` intacto (solo se agregan puertos nuevos).
 
+- [x] **T-027 — Correccion CA-05: texto de requisitos futuros en el documento** (RF-07, CA-05)
+  - `document_renderer.py`: `requisitos_futuros` deja de tratarse como coleccion y se mapea con
+    `_future_requirement_entries` (parrafo + items ordenados, preservando saltos de linea); la plantilla no
+    se modifica (ADR-004). Evidencia: `test_document_renderer.py::test_render_future_requirements_includes_text_without_items`
+    y `::test_render_future_requirements_includes_text_and_ordered_items`; clave `futuros clave` en
+    `test_document_conversion.py`; 183 unitarias y 26 integracion en verde.
+
 ## Trazabilidad CA → Tareas
 
 | CA | Tareas |
 |---|---|
 | CA-01 | T-006, T-010, T-017 |
-| CA-02 | T-007, T-025 |
+| CA-02 | T-007, T-025, T-027 |
 | CA-03 | T-006, T-010 |
 | CA-04 | T-006, T-010 |
-| CA-05 | T-006, T-010 |
+| CA-05 | T-006, T-010, T-027 |
 | CA-06 | T-006, T-010 |
 | CA-07 | T-006, T-010 |
 | CA-08 | T-006, T-010 |

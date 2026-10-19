@@ -25,6 +25,7 @@ KEY_TEXTS = (
     "necesidad clave",
     "contexto clave",
     "usuarios clave",
+    "futuros clave",
     "ana conversion",
 )
 
@@ -44,6 +45,8 @@ def _preview_document() -> PreviewDocument:
         current_need="Necesidad clave de conversion",
         context_description="Contexto clave de conversion",
         users_permissions="Usuarios clave de conversion",
+        future_requirements_applies=True,
+        future_requirements_text="Futuros clave de conversion",
     )
     version = version.with_signature(
         Signature(
