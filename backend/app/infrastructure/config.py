@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     storage_backend: Literal["local", "s3", "oci"] = "local"
     auth_provider: Literal["local_jwt", "oidc"] = "local_jwt"
     jwt_secret: SecretStr = SecretStr("change_me")
+    jwt_ttl_hours: int = 8
+    password_min_length: int = 8
+    password_hash_iterations: int = 200_000
+    login_max_failed_attempts: int = 5
+    seed_admin_username: str | None = None
+    seed_admin_password: SecretStr | None = None
+    seed_admin_nombre: str = "Administrador"
     ai_provider: str = "none"
 
     templates_dir: str = "/app/templates"
