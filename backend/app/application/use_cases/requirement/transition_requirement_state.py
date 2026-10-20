@@ -1,7 +1,12 @@
 import logging
 from dataclasses import dataclass
 
+from app.application.ports.audit_repository import AuditRecorderPort
+from app.application.ports.auth import Principal
 from app.application.ports.requirement_repository import RequirementRepository
+from app.application.use_cases.requirement._common import principal_roles
+from app.domain.auth.audit import AuditAction, AuditEntry
+from app.domain.auth.authorization import ensure_transition_allowed
 from app.domain.requirement.enums import RequirementStatus, parse_status
 from app.domain.requirement.requirement import allowed_transitions
 from app.domain.requirement.validation import ValidationIssue, validate_requirement
@@ -29,22 +34,27 @@ class TransitionOutcome:
 
 
 class TransitionRequirementState:
-    """Aplica una transicion de estado con validacion integral previa."""
+    """Aplica una transicion de estado con control de rol y validacion integral previa."""
 
-    def __init__(self, repository: RequirementRepository) -> None:
+    def __init__(self, repository: RequirementRepository, audit: AuditRecorderPort) -> None:
         self._repository = repository
+        self._audit = audit
 
     def execute(
         self,
         requirement_id: int,
         target_state: str,
         *,
+        principal: Principal,
         reason: str | None = None,
-        actor_id: int | None = None,
     ) -> TransitionOutcome:
+        target = parse_status(target_state)
+        if target is not None:
+            # 403 antes de cargar o validar (CA-05): solo body + roles del principal.
+            ensure_transition_allowed(principal_roles(principal), target)
+
         requirement = self._repository.get(requirement_id)
         previous = requirement.status
-        target = parse_status(target_state)
         if target is None:
             return TransitionOutcome(
                 previous_status=previous,
@@ -88,14 +98,29 @@ class TransitionRequirementState:
                     errors=validation.errors,
                 )
 
-        saved = self._repository.save(requirement.change_status(target))
+        saved = self._repository.save(
+            requirement.change_status(target), actor=principal.user_id
+        )
+        self._audit.record(
+            AuditEntry(
+                entity="REQ_REQUERIMIENTO",
+                entity_id=requirement_id,
+                action=AuditAction.STATE_TRANSITION,
+                actor=principal.user_id,
+                detail={
+                    "estado_anterior": previous.value,
+                    "estado_actual": target.value,
+                    "motivo": reason,
+                },
+            )
+        )
         logger.info(
-            "Transicion %s -> %s (requerimiento=%s, motivo=%s, actor_id=%s)",
+            "Transicion %s -> %s (requerimiento=%s, motivo=%s, actor=%s)",
             previous.value,
             target.value,
             requirement_id,
             reason,
-            actor_id,
+            principal.user_id,
         )
         return TransitionOutcome(
             previous_status=previous,

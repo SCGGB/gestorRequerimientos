@@ -81,7 +81,7 @@ def test_search_without_filters_and_pagination(
 ) -> None:
     baseline = len(repository.list())
     for folio in (FOLIO_PAGE, FOLIO_PAGE + 1, FOLIO_PAGE + 2):
-        repository.save(_requirement(folio))
+        repository.save(_requirement(folio), actor="tester")
 
     items, total = repository.search(RequirementSearchFilters(), offset=0, limit=1000)
 
@@ -111,7 +111,10 @@ def test_search_without_filters_and_pagination(
 def test_search_filters_by_status_and_folio(
     repository: SqlAlchemyRequirementRepository,
 ) -> None:
-    repository.save(_requirement(FOLIO_STATUS, status=RequirementStatus.EN_REVISION))
+    repository.save(
+        _requirement(FOLIO_STATUS, status=RequirementStatus.EN_REVISION),
+        actor="tester",
+    )
 
     by_folio, folio_total = repository.search(
         RequirementSearchFilters(folio=FOLIO_STATUS), offset=0, limit=10
@@ -144,16 +147,16 @@ def test_search_filters_by_status_and_folio(
 def test_duplicate_folio_is_translated_to_application_error(
     repository: SqlAlchemyRequirementRepository,
 ) -> None:
-    repository.save(_requirement(FOLIO_DUPLICATE))
+    repository.save(_requirement(FOLIO_DUPLICATE), actor="tester")
 
     with pytest.raises(DuplicateFolioError):
-        repository.save(_requirement(FOLIO_DUPLICATE))
+        repository.save(_requirement(FOLIO_DUPLICATE), actor="tester")
 
 
 def test_child_ids_are_stable_across_writes(
     repository: SqlAlchemyRequirementRepository,
 ) -> None:
-    saved = repository.save(_requirement(FOLIO_STABLE_IDS))
+    saved = repository.save(_requirement(FOLIO_STABLE_IDS), actor="tester")
     version = saved.versions[0]
     objective_ids = [item.id for item in version.objectives]
     signature_ids = [item.id for item in version.signatures]
@@ -168,7 +171,7 @@ def test_child_ids_are_stable_across_writes(
     assert updated is not None
     edited_version, edited_item = updated
 
-    reloaded = repository.save(replace(saved, versions=(edited_version,)))
+    reloaded = repository.save(replace(saved, versions=(edited_version,)), actor="tester")
     reloaded_version = reloaded.versions[0]
 
     assert [item.id for item in reloaded_version.objectives] == objective_ids
@@ -181,7 +184,7 @@ def test_child_ids_are_stable_across_writes(
 def test_reorder_keeps_ids_and_avoids_unique_constraint(
     repository: SqlAlchemyRequirementRepository,
 ) -> None:
-    saved = repository.save(_requirement(FOLIO_REORDER))
+    saved = repository.save(_requirement(FOLIO_REORDER), actor="tester")
     version = saved.versions[0]
     objective_ids = [int(item.id) for item in version.objectives]
     attachment_ids = [int(item.id) for item in version.attachments]
@@ -198,7 +201,7 @@ def test_reorder_keeps_ids_and_avoids_unique_constraint(
         ),
     )
 
-    reloaded = repository.save(replace(saved, versions=(reordered,)))
+    reloaded = repository.save(replace(saved, versions=(reordered,)), actor="tester")
     reloaded_version = reloaded.versions[0]
 
     assert sorted(int(item.id) for item in reloaded_version.objectives) == sorted(

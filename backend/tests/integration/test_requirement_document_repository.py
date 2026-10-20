@@ -60,7 +60,7 @@ def requirement_ids(
 ) -> tuple[int, int]:
     repository = SqlAlchemyRequirementRepository(migrated_engine)
     requirement = Requirement(folio=next(folio_sequence), versions=(complete_version(),))
-    saved = repository.save(requirement)
+    saved = repository.save(requirement, actor="tester")
     assert saved.id is not None
     assert saved.current_version_id is not None
     return saved.id, saved.current_version_id
@@ -97,7 +97,7 @@ def test_blob_round_trip(
     requirement_ids: tuple[int, int],
 ) -> None:
     requirement_id, version_id = requirement_ids
-    document_id = repository.add(_document(requirement_id, version_id))
+    document_id = repository.add(_document(requirement_id, version_id), actor="tester")
 
     loaded = repository.get(document_id)
 
@@ -117,14 +117,18 @@ def test_list_by_requirement_returns_metadata_without_content(
     requirement_ids: tuple[int, int],
 ) -> None:
     requirement_id, version_id = requirement_ids
-    repository.add(_document(requirement_id, version_id, generated_at=datetime(2026, 5, 1, 8, 0)))
+    repository.add(
+        _document(requirement_id, version_id, generated_at=datetime(2026, 5, 1, 8, 0)),
+        actor="tester",
+    )
     repository.add(
         _document(
             requirement_id,
             version_id,
             document_format="PDF",
             generated_at=datetime(2026, 5, 1, 9, 0),
-        )
+        ),
+        actor="tester",
     )
 
     documents = repository.list_by_requirement(requirement_id)
@@ -139,10 +143,10 @@ def test_duplicate_regeneration_timestamp_is_rejected(
     requirement_ids: tuple[int, int],
 ) -> None:
     requirement_id, version_id = requirement_ids
-    repository.add(_document(requirement_id, version_id))
+    repository.add(_document(requirement_id, version_id), actor="tester")
 
     with pytest.raises(sa.exc.IntegrityError):
-        repository.add(_document(requirement_id, version_id))
+        repository.add(_document(requirement_id, version_id), actor="tester")
 
 
 def test_invalid_format_is_rejected(

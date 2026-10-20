@@ -17,19 +17,17 @@ from app.infrastructure.database import create_session_factory
 from app.infrastructure.db import mappers
 from app.infrastructure.db.tables import REQ_DOCUMENTO
 
-SYSTEM_ACTOR = "SYSTEM"
-
 _METADATA_COLUMNS: tuple[Column[Any], ...] = tuple(
     column for column in REQ_DOCUMENTO.columns if column.name != "CONTENIDO"
 )
 
 
-def _insert_audit(now: datetime) -> dict[str, Any]:
+def _insert_audit(now: datetime, actor: str) -> dict[str, Any]:
     return {
         "CREATED_AT": now,
-        "CREATED_BY": SYSTEM_ACTOR,
+        "CREATED_BY": actor,
         "UPDATED_AT": now,
-        "UPDATED_BY": SYSTEM_ACTOR,
+        "UPDATED_BY": actor,
     }
 
 
@@ -37,10 +35,10 @@ class SqlAlchemyRequirementDocumentRepository(RequirementDocumentRepository):
     def __init__(self, engine: Engine) -> None:
         self._session_factory: sessionmaker[Session] = create_session_factory(engine)
 
-    def add(self, document: GeneratedDocument) -> int:
+    def add(self, document: GeneratedDocument, *, actor: str) -> int:
         row = mappers.generated_document_to_row(document)
         row.pop("ID", None)
-        row.update(_insert_audit(datetime.now()))
+        row.update(_insert_audit(datetime.now(), actor))
         with self._session_factory.begin() as session:
             result = session.execute(
                 insert(REQ_DOCUMENTO).values(**row).returning(REQ_DOCUMENTO.c.ID)

@@ -38,7 +38,6 @@ from app.infrastructure.db.tables import (
     REQ_VOLUMETRIA,
 )
 
-SYSTEM_ACTOR = "SYSTEM"
 FOLIO_UNIQUE_CONSTRAINT = "REQ_REQUERIMIENTO_FOLIO_UQ"
 # Desplazamiento temporal de ORDEN para el reorden en dos fases (UQ VERSION_ID+ORDEN);
 # los ORDEN de dominio son numeros pequeños, muy por debajo de este umbral.
@@ -53,17 +52,17 @@ class PersistableChild(Protocol):
     def id(self) -> int | None: ...
 
 
-def _insert_audit(now: datetime) -> dict[str, Any]:
+def _insert_audit(now: datetime, actor: str) -> dict[str, Any]:
     return {
         "CREATED_AT": now,
-        "CREATED_BY": SYSTEM_ACTOR,
+        "CREATED_BY": actor,
         "UPDATED_AT": now,
-        "UPDATED_BY": SYSTEM_ACTOR,
+        "UPDATED_BY": actor,
     }
 
 
-def _update_audit(now: datetime) -> dict[str, Any]:
-    return {"UPDATED_AT": now, "UPDATED_BY": SYSTEM_ACTOR}
+def _update_audit(now: datetime, actor: str) -> dict[str, Any]:
+    return {"UPDATED_AT": now, "UPDATED_BY": actor}
 
 
 def _map_integrity_error(exc: IntegrityError) -> ApplicationError:
@@ -76,10 +75,10 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
     def __init__(self, engine: Engine) -> None:
         self._session_factory: sessionmaker[Session] = create_session_factory(engine)
 
-    def save(self, requirement: Requirement) -> Requirement:
+    def save(self, requirement: Requirement, *, actor: str) -> Requirement:
         try:
             with self._session_factory.begin() as session:
-                requirement_id = self._persist_requirement(session, requirement)
+                requirement_id = self._persist_requirement(session, requirement, actor)
         except IntegrityError as exc:
             raise _map_integrity_error(exc) from exc
         return self.get(requirement_id)
@@ -148,14 +147,16 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
         except NoResultFound as exc:
             raise RequirementNotFoundError() from exc
 
-    def _persist_requirement(self, session: Session, requirement: Requirement) -> int:
+    def _persist_requirement(
+        self, session: Session, requirement: Requirement, actor: str
+    ) -> int:
         now = datetime.now()
-        requirement_id = self._upsert_container(session, requirement, now)
+        requirement_id = self._upsert_container(session, requirement, now, actor)
 
         version_ids: dict[int, int] = {}
         for version in requirement.versions:
             version_ids[version.number] = self._persist_version(
-                session, version, requirement_id, now
+                session, version, requirement_id, now, actor
             )
 
         current = requirement.current_version()
@@ -168,13 +169,13 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
         return requirement_id
 
     def _upsert_container(
-        self, session: Session, requirement: Requirement, now: datetime
+        self, session: Session, requirement: Requirement, now: datetime, actor: str
     ) -> int:
         row = mappers.requirement_to_row(requirement)
         row.pop("VERSION_ACTUAL_ID", None)
         if requirement.id is None:
             row.pop("ID", None)
-            row.update(_insert_audit(now))
+            row.update(_insert_audit(now, actor))
             result = session.execute(
                 insert(REQ_REQUERIMIENTO)
                 .values(**row)
@@ -186,7 +187,7 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
         session.execute(
             update(REQ_REQUERIMIENTO)
             .where(REQ_REQUERIMIENTO.c.ID == requirement.id)
-            .values(**row, **_update_audit(now))
+            .values(**row, **_update_audit(now, actor))
         )
         return requirement.id
 
@@ -196,11 +197,12 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
         version: RequirementVersion,
         requirement_id: int,
         now: datetime,
+        actor: str,
     ) -> int:
         row = mappers.version_to_row(version, requirement_id=requirement_id)
         if version.id is None:
             row.pop("ID", None)
-            row.update(_insert_audit(now))
+            row.update(_insert_audit(now, actor))
             result = session.execute(
                 insert(REQ_VERSION).values(**row).returning(REQ_VERSION.c.ID)
             )
@@ -211,10 +213,10 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
             session.execute(
                 update(REQ_VERSION)
                 .where(REQ_VERSION.c.ID == version_id)
-                .values(**row, **_update_audit(now))
+                .values(**row, **_update_audit(now, actor))
             )
 
-        self._replace_children(session, version_id, version, now)
+        self._replace_children(session, version_id, version, now, actor)
         return version_id
 
     def _replace_children(
@@ -223,9 +225,16 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
         version_id: int,
         version: RequirementVersion,
         now: datetime,
+        actor: str,
     ) -> None:
         self._replace_collection(
-            session, REQ_OBJETIVO, mappers.objective_to_row, version.objectives, version_id, now
+            session,
+            REQ_OBJETIVO,
+            mappers.objective_to_row,
+            version.objectives,
+            version_id,
+            now,
+            actor,
         )
         self._replace_collection(
             session,
@@ -234,9 +243,16 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
             version.considerations,
             version_id,
             now,
+            actor,
         )
         self._replace_collection(
-            session, REQ_BENEFICIO, mappers.benefit_to_row, version.benefits, version_id, now
+            session,
+            REQ_BENEFICIO,
+            mappers.benefit_to_row,
+            version.benefits,
+            version_id,
+            now,
+            actor,
         )
         self._replace_collection(
             session,
@@ -245,12 +261,19 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
             version.restrictions,
             version_id,
             now,
+            actor,
         )
         self._replace_collection(
-            session, REQ_VOLUMETRIA, mappers.volumetry_to_row, version.volumetry, version_id, now
+            session,
+            REQ_VOLUMETRIA,
+            mappers.volumetry_to_row,
+            version.volumetry,
+            version_id,
+            now,
+            actor,
         )
         self._replace_collection(
-            session, REQ_RIESGO, mappers.risk_to_row, version.risks, version_id, now
+            session, REQ_RIESGO, mappers.risk_to_row, version.risks, version_id, now, actor
         )
         self._replace_collection(
             session,
@@ -259,9 +282,10 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
             version.future_requirements_items,
             version_id,
             now,
+            actor,
         )
-        self._replace_signatures(session, version, version_id, now)
-        self._replace_attachments(session, version, version_id, now)
+        self._replace_signatures(session, version, version_id, now, actor)
+        self._replace_attachments(session, version, version_id, now, actor)
 
     def _replace_collection(
         self,
@@ -271,8 +295,11 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
         items: Sequence[CollectionItem],
         version_id: int,
         now: datetime,
+        actor: str,
     ) -> None:
-        self._upsert_rows(session, table, to_row, items, version_id, now, ordered=True)
+        self._upsert_rows(
+            session, table, to_row, items, version_id, now, actor, ordered=True
+        )
 
     def _replace_signatures(
         self,
@@ -280,6 +307,7 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
         version: RequirementVersion,
         version_id: int,
         now: datetime,
+        actor: str,
     ) -> None:
         self._upsert_rows(
             session,
@@ -288,6 +316,7 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
             version.signatures,
             version_id,
             now,
+            actor,
             ordered=False,
         )
 
@@ -297,6 +326,7 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
         version: RequirementVersion,
         version_id: int,
         now: datetime,
+        actor: str,
     ) -> None:
         self._upsert_rows(
             session,
@@ -305,6 +335,7 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
             version.attachments,
             version_id,
             now,
+            actor,
             ordered=True,
         )
 
@@ -316,6 +347,7 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
         items: Sequence[PersistableChild],
         version_id: int,
         now: datetime,
+        actor: str,
         *,
         ordered: bool,
     ) -> None:
@@ -345,13 +377,13 @@ class SqlAlchemyRequirementRepository(RequirementRepository):
             row = to_row(item, version_id=version_id)
             row.pop("ID", None)
             if item.id is None:
-                row.update(_insert_audit(now))
+                row.update(_insert_audit(now, actor))
                 session.execute(insert(table).values(**row))
             else:
                 session.execute(
                     update(table)
                     .where(table.c.ID == item.id)
-                    .values(**row, **_update_audit(now))
+                    .values(**row, **_update_audit(now, actor))
                 )
 
     def _load(self, session: Session, requirement_id: int) -> Requirement:

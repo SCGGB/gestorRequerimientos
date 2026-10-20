@@ -5,15 +5,21 @@ from datetime import date
 import pytest
 
 from app.application.errors import RequirementNotFoundError, VersionNotFoundError
+from app.application.ports.auth import Principal
 from app.application.use_cases.requirement import (
     BuildPreviewDocument,
     CreateRequirement,
     FreezeAndAdvance,
 )
 from app.domain.requirement.requirement import Requirement
-from tests.application.fakes import InMemoryRequirementRepository
+from tests.application.fakes import FakeAuditRecorder, InMemoryRequirementRepository
 
 _VERSION_DATE = date(2026, 1, 1)
+
+_PRINCIPAL = Principal(
+    user_id="tester",
+    roles=frozenset({"ELABORO", "REVISO", "AUTORIZO", "ADMIN"}),
+)
 
 
 class RecordingRepository(InMemoryRequirementRepository):
@@ -23,9 +29,9 @@ class RecordingRepository(InMemoryRequirementRepository):
         super().__init__()
         self.save_calls = 0
 
-    def save(self, requirement: Requirement) -> Requirement:
+    def save(self, requirement: Requirement, *, actor: str) -> Requirement:
         self.save_calls += 1
-        return super().save(requirement)
+        return super().save(requirement, actor=actor)
 
 
 @pytest.fixture()
@@ -33,8 +39,16 @@ def repository() -> RecordingRepository:
     return RecordingRepository()
 
 
-def _create(repository: RecordingRepository, folio: int = 1) -> Requirement:
-    return CreateRequirement(repository).execute(
+@pytest.fixture()
+def audit() -> FakeAuditRecorder:
+    return FakeAuditRecorder()
+
+
+def _create(
+    repository: RecordingRepository, audit: FakeAuditRecorder, folio: int = 1
+) -> Requirement:
+    return CreateRequirement(repository, audit).execute(
+        principal=_PRINCIPAL,
         folio=folio,
         title="Gestion de contratos",
         change_type_id=1,
@@ -46,8 +60,9 @@ def _create(repository: RecordingRepository, folio: int = 1) -> Requirement:
 
 def test_returns_preview_of_requested_version(
     repository: RecordingRepository,
+    audit: FakeAuditRecorder,
 ) -> None:
-    requirement = _create(repository, folio=5)
+    requirement = _create(repository, audit, folio=5)
     version = requirement.current_version()
     assert version is not None and version.id is not None
     assert requirement.id is not None
@@ -70,16 +85,19 @@ def test_missing_requirement_raises_not_found(
 
 def test_missing_version_raises_not_found(
     repository: RecordingRepository,
+    audit: FakeAuditRecorder,
 ) -> None:
-    requirement = _create(repository)
+    requirement = _create(repository, audit)
     assert requirement.id is not None
 
     with pytest.raises(VersionNotFoundError):
         BuildPreviewDocument(repository).execute(requirement.id, 999)
 
 
-def test_preview_is_read_only(repository: RecordingRepository) -> None:
-    requirement = _create(repository)
+def test_preview_is_read_only(
+    repository: RecordingRepository, audit: FakeAuditRecorder
+) -> None:
+    requirement = _create(repository, audit)
     version = requirement.current_version()
     assert version is not None and version.id is not None
     assert requirement.id is not None
@@ -92,11 +110,13 @@ def test_preview_is_read_only(repository: RecordingRepository) -> None:
 
 def test_version_control_lists_all_versions_ordered(
     repository: RecordingRepository,
+    audit: FakeAuditRecorder,
 ) -> None:
-    requirement = _create(repository)
+    requirement = _create(repository, audit)
     assert requirement.id is not None
-    advanced = FreezeAndAdvance(repository).execute(
+    advanced = FreezeAndAdvance(repository, audit).execute(
         requirement.id,
+        principal=_PRINCIPAL,
         document_version="2.0",
         version_date=date(2026, 2, 10),
     )

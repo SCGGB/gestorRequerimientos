@@ -13,7 +13,7 @@ from tests.factories import requirement_with
 def _save_complete(
     repository: InMemoryRequirementRepository, **overrides: object
 ) -> Requirement:
-    return repository.save(requirement_with(**overrides))
+    return repository.save(requirement_with(**overrides), actor="seed")
 
 
 @pytest.fixture()

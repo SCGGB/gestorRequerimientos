@@ -3,11 +3,14 @@ from dataclasses import dataclass, replace
 from datetime import date
 from typing import Any
 
+from app.application.ports.audit_repository import AuditRecorderPort
+from app.application.ports.auth import Principal
 from app.application.ports.requirement_repository import RequirementRepository
 from app.application.use_cases.requirement._common import (
     load_editable_working_version,
     replace_version,
 )
+from app.domain.auth.audit import AuditAction, AuditEntry
 from app.domain.requirement.requirement import Requirement
 from app.domain.requirement.version import RequirementVersion
 
@@ -48,20 +51,38 @@ class VersionEdit:
 class UpdateVersion:
     """Edita la cabecera/narrativa de la version de trabajo en BORRADOR."""
 
-    def __init__(self, repository: RequirementRepository) -> None:
+    def __init__(self, repository: RequirementRepository, audit: AuditRecorderPort) -> None:
         self._repository = repository
+        self._audit = audit
 
     def execute(
         self,
         requirement_id: int,
         version_id: int,
         edit: VersionEdit,
+        *,
+        principal: Principal,
     ) -> Requirement:
         requirement, version = load_editable_working_version(
             self._repository, requirement_id, version_id
         )
         updated = self._apply(version, edit)
-        return self._repository.save(replace_version(requirement, version, updated))
+        changed = [
+            field for field in _EDITABLE_FIELDS if getattr(edit, field) is not None
+        ]
+        saved = self._repository.save(
+            replace_version(requirement, version, updated), actor=principal.user_id
+        )
+        self._audit.record(
+            AuditEntry(
+                entity="REQ_VERSION",
+                entity_id=version.id,
+                action=AuditAction.VERSION_UPDATE,
+                actor=principal.user_id,
+                detail={"campos": changed},
+            )
+        )
+        return saved
 
     @staticmethod
     def _apply(version: RequirementVersion, edit: VersionEdit) -> RequirementVersion:

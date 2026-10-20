@@ -1,9 +1,16 @@
 from dataclasses import replace
 
 from app.application.errors import VersionNotFoundError
+from app.application.ports.auth import Principal
 from app.application.ports.requirement_repository import RequirementRepository
+from app.domain.auth.roles import Role
 from app.domain.requirement.requirement import Requirement
 from app.domain.requirement.version import RequirementVersion
+
+
+def principal_roles(principal: Principal) -> frozenset[Role]:
+    """Convierte los roles del principal (textos) al enumerado del dominio."""
+    return frozenset(Role(value) for value in principal.roles)
 
 
 def load_editable_working_version(
@@ -41,9 +48,11 @@ def save_version(
     requirement: Requirement,
     version: RequirementVersion,
     updated: RequirementVersion,
+    *,
+    actor: str,
 ) -> RequirementVersion:
     """Persiste el agregado y devuelve la version recargada por su id."""
-    saved = repository.save(replace_version(requirement, version, updated))
+    saved = repository.save(replace_version(requirement, version, updated), actor=actor)
     if version.id is None:
         return updated
     reloaded = saved.version_by_id(version.id)

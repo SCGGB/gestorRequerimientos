@@ -10,6 +10,7 @@ from app.application.errors import (
     DuplicateFolioError,
     RequirementNotFoundError,
 )
+from app.application.ports.audit_repository import AuditRecorderPort
 from app.application.ports.catalog_repository import ChangeTypeCatalog, PositionCatalog
 from app.application.ports.document_converter import DocumentConverterPort
 from app.application.ports.document_renderer import DocumentRendererPort
@@ -20,6 +21,7 @@ from app.application.ports.requirement_repository import (
     RequirementRepository,
     RequirementSearchFilters,
 )
+from app.domain.auth.audit import AuditEntry
 from app.domain.requirement.catalog import ChangeType, Position
 from app.domain.requirement.document import GeneratedDocument
 from app.domain.requirement.enums import SignatureRole
@@ -30,14 +32,35 @@ from app.domain.requirement.version import RequirementVersion
 ItemT = TypeVar("ItemT")
 
 
+class FakeAuditRecorder(AuditRecorderPort):
+    """Registra las entradas de auditoria en memoria para las pruebas."""
+
+    def __init__(self) -> None:
+        self.entries: list[AuditEntry] = []
+
+    def record(self, entry: AuditEntry) -> None:
+        self.entries.append(entry)
+
+    def actions(self) -> tuple[str, ...]:
+        return tuple(entry.action.value for entry in self.entries)
+
+    def find(self, action: str) -> AuditEntry | None:
+        for entry in self.entries:
+            if entry.action.value == action:
+                return entry
+        return None
+
+
 class InMemoryRequirementRepository(RequirementRepository):
     """Repositorio en memoria con ids estables (sin base de datos)."""
 
     def __init__(self) -> None:
         self._requirements: dict[int, Requirement] = {}
         self._ids = count(1)
+        self.last_actor: str | None = None
 
-    def save(self, requirement: Requirement) -> Requirement:
+    def save(self, requirement: Requirement, *, actor: str) -> Requirement:
+        self.last_actor = actor
         # Check for duplicate folio before assigning/overwriting
         target_folio = requirement.folio
         for existing in self._requirements.values():
@@ -133,9 +156,9 @@ class InMemoryRequirementDocumentRepository(RequirementDocumentRepository):
         self._documents: dict[int, GeneratedDocument] = {}
         self._ids = count(1)
 
-    def add(self, document: GeneratedDocument) -> int:
+    def add(self, document: GeneratedDocument, *, actor: str) -> int:
         document_id = next(self._ids)
-        self._documents[document_id] = replace(document, id=document_id)
+        self._documents[document_id] = replace(document, id=document_id, generated_by=actor)
         return document_id
 
     def get(self, document_id: int) -> GeneratedDocument:

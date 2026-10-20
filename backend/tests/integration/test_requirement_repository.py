@@ -67,7 +67,7 @@ def _full_requirement(folio: int) -> Requirement:
 
 
 def test_saves_and_loads_full_aggregate(repository: SqlAlchemyRequirementRepository) -> None:
-    saved = repository.save(_full_requirement(800001))
+    saved = repository.save(_full_requirement(800001), actor="tester")
 
     assert saved.id is not None
     assert saved.current_version_id is not None
@@ -96,7 +96,7 @@ def test_saves_and_loads_full_aggregate(repository: SqlAlchemyRequirementReposit
 
 
 def test_get_by_folio_and_list(repository: SqlAlchemyRequirementRepository) -> None:
-    saved = repository.save(_full_requirement(800002))
+    saved = repository.save(_full_requirement(800002), actor="tester")
 
     assert repository.get_by_folio(800002) == saved
     assert repository.get_by_folio(999999) is None
@@ -104,21 +104,21 @@ def test_get_by_folio_and_list(repository: SqlAlchemyRequirementRepository) -> N
 
 
 def test_updates_existing_requirement(repository: SqlAlchemyRequirementRepository) -> None:
-    saved = repository.save(_full_requirement(800003))
+    saved = repository.save(_full_requirement(800003), actor="tester")
     updated_version = replace(saved.versions[0], title="Titulo actualizado")
     updated = replace(saved, versions=(updated_version,))
 
-    persisted = repository.save(updated)
+    persisted = repository.save(updated, actor="tester")
 
     assert persisted.id == saved.id
     assert persisted.versions[0].title == "Titulo actualizado"
 
 
 def test_duplicate_folio_is_rejected(repository: SqlAlchemyRequirementRepository) -> None:
-    repository.save(_full_requirement(800004))
+    repository.save(_full_requirement(800004), actor="tester")
 
     with pytest.raises(DuplicateFolioError):
-        repository.save(_full_requirement(800004))
+        repository.save(_full_requirement(800004), actor="tester")
 
 
 def test_invalid_dynamic_fields_json_is_rejected(
@@ -127,4 +127,4 @@ def test_invalid_dynamic_fields_json_is_rejected(
     monkeypatch.setattr(mappers, "dynamic_fields_to_json", lambda fields: "no-es-json")
 
     with pytest.raises(DataConflictError):
-        repository.save(_full_requirement(800005))
+        repository.save(_full_requirement(800005), actor="tester")

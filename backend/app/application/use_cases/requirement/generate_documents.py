@@ -8,12 +8,15 @@ from app.application.errors import (
     DocumentGenerationNotAllowedError,
     VersionNotFoundError,
 )
+from app.application.ports.audit_repository import AuditRecorderPort
+from app.application.ports.auth import Principal
 from app.application.ports.document_converter import DocumentConverterPort
 from app.application.ports.document_renderer import DocumentRendererPort
 from app.application.ports.requirement_document_repository import (
     RequirementDocumentRepository,
 )
 from app.application.ports.requirement_repository import RequirementRepository
+from app.domain.auth.audit import AuditAction, AuditEntry
 from app.domain.requirement.document import (
     MIME_TYPES,
     DocumentFormat,
@@ -26,8 +29,6 @@ from app.domain.requirement.preview import build_preview_document
 from app.domain.requirement.requirement import Requirement
 from app.domain.requirement.validation import validate_requirement
 from app.domain.requirement.version import RequirementVersion
-
-SYSTEM_ACTOR = "SYSTEM"
 
 _GENERATABLE_STATUSES = (RequirementStatus.APROBADO, RequirementStatus.GENERADO)
 _FORMATS: tuple[DocumentFormat, ...] = ("DOCX", "PDF")
@@ -42,6 +43,7 @@ class GenerateRequirementDocuments:
         document_repository: RequirementDocumentRepository,
         renderer: DocumentRendererPort,
         converter: DocumentConverterPort,
+        audit: AuditRecorderPort,
         *,
         template_version: str,
     ) -> None:
@@ -49,14 +51,15 @@ class GenerateRequirementDocuments:
         self._document_repository = document_repository
         self._renderer = renderer
         self._converter = converter
+        self._audit = audit
         self._template_version = template_version
 
     def execute(
         self,
         requirement_id: int,
         *,
+        principal: Principal,
         version_id: int | None = None,
-        actor: str = SYSTEM_ACTOR,
     ) -> Sequence[GeneratedDocument]:
         requirement = self._repository.get(requirement_id)
         version = self._resolve_version(requirement, version_id)
@@ -76,13 +79,16 @@ class GenerateRequirementDocuments:
                 file_format,
                 content,
                 generated_at,
-                actor,
+                principal.user_id,
             )
             for file_format, content in contents
         )
 
         if requirement.status is RequirementStatus.APROBADO:
-            self._repository.save(requirement.change_status(RequirementStatus.GENERADO))
+            self._repository.save(
+                requirement.change_status(RequirementStatus.GENERADO),
+                actor=principal.user_id,
+            )
         return documents
 
     def _store(
@@ -109,7 +115,20 @@ class GenerateRequirementDocuments:
             generated_by=actor,
             content=content,
         )
-        document_id = self._document_repository.add(document)
+        document_id = self._document_repository.add(document, actor=actor)
+        self._audit.record(
+            AuditEntry(
+                entity="REQ_DOCUMENTO",
+                entity_id=document_id,
+                action=AuditAction.DOCUMENT_GENERATED,
+                actor=actor,
+                detail={
+                    "formato": file_format,
+                    "nombre_archivo": document.file_name,
+                    "version_id": version.id,
+                },
+            )
+        )
         return replace(document, id=document_id, content=None)
 
     @staticmethod

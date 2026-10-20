@@ -1,6 +1,9 @@
 from datetime import date
 
+from app.application.ports.audit_repository import AuditRecorderPort
+from app.application.ports.auth import Principal
 from app.application.ports.requirement_repository import RequirementRepository
+from app.domain.auth.audit import AuditAction, AuditEntry
 from app.domain.requirement.enums import RequirementStatus
 from app.domain.requirement.requirement import Requirement
 from app.domain.requirement.version import RequirementVersion
@@ -9,12 +12,14 @@ from app.domain.requirement.version import RequirementVersion
 class CreateRequirement:
     """Crea un requerimiento con su version 1 de trabajo en BORRADOR."""
 
-    def __init__(self, repository: RequirementRepository) -> None:
+    def __init__(self, repository: RequirementRepository, audit: AuditRecorderPort) -> None:
         self._repository = repository
+        self._audit = audit
 
     def execute(
         self,
         *,
+        principal: Principal,
         folio: int,
         title: str,
         change_type_id: int,
@@ -35,4 +40,14 @@ class CreateRequirement:
             status=RequirementStatus.BORRADOR,
             versions=(version,),
         )
-        return self._repository.save(requirement)
+        saved = self._repository.save(requirement, actor=principal.user_id)
+        self._audit.record(
+            AuditEntry(
+                entity="REQ_REQUERIMIENTO",
+                entity_id=saved.id,
+                action=AuditAction.REQUIREMENT_CREATE,
+                actor=principal.user_id,
+                detail={"folio": saved.folio, "titulo": title},
+            )
+        )
+        return saved

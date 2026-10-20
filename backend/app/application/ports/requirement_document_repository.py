@@ -6,8 +6,8 @@ from app.domain.requirement.document import GeneratedDocument
 
 class RequirementDocumentRepository(ABC):
     @abstractmethod
-    def add(self, document: GeneratedDocument) -> int:
-        """Registra un documento generado y devuelve su id."""
+    def add(self, document: GeneratedDocument, *, actor: str) -> int:
+        """Registra un documento generado y devuelve su id (``actor`` en auditoria)."""
         raise NotImplementedError
 
     @abstractmethod

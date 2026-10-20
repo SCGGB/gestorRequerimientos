@@ -14,7 +14,8 @@ class RequirementSearchFilters:
 
 class RequirementRepository(ABC):
     @abstractmethod
-    def save(self, requirement: Requirement) -> Requirement:
+    def save(self, requirement: Requirement, *, actor: str) -> Requirement:
+        """Persiste el agregado usando ``actor`` en ``CREATED_BY``/``UPDATED_BY``."""
         pass
 
     @abstractmethod

@@ -25,7 +25,7 @@
 
 Commit de fase: `SPEC-008: dominio auth (roles, autorizacion, usuario, sesion, auditoria)`
 
-- [ ] T-01 (RF-02, RF-04, RF-05, RF-06, CA-04, CA-05, CA-06, CA-14) Roles del MVP y matriz de
+- [x] T-01 (RF-02, RF-04, RF-05, RF-06, CA-04, CA-05, CA-06, CA-14) Roles del MVP y matriz de
   autorizacion como datos puros
   - Nuevo `backend/app/domain/auth/roles.py`: `Role(StrEnum)` con `ELABORO`, `REVISO`, `AUTORIZO`,
     `ADMIN` (ADR-003).
@@ -38,7 +38,7 @@ Commit de fase: `SPEC-008: dominio auth (roles, autorizacion, usuario, sesion, a
     `ensure_signature_allowed(roles, requested_role)` (cada rol solo la suya, `ADMIN` nunca). Importa
     `domain/requirement/enums` (mismo dominio); sin imports de FastAPI, SQLAlchemy ni librerias JWT.
 
-- [ ] T-02 (RF-08, RF-09, RF-13, CA-01, CA-08, CA-09) Entidad `User` y sesion `Session`
+- [x] T-02 (RF-08, RF-09, RF-13, CA-01, CA-08, CA-09) Entidad `User` y sesion `Session`
   - Nuevo `backend/app/domain/auth/user.py`: `@dataclass(frozen=True, slots=True)` `User` (`id`,
     `username`, `name`, `password_hash`, `roles: frozenset[Role]`, `active`, `failed_attempts`) con
     `is_locked(max_attempts)`, `record_failed_attempt()` (devuelve `User` actualizado),
@@ -48,7 +48,7 @@ Commit de fase: `SPEC-008: dominio auth (roles, autorizacion, usuario, sesion, a
     `SESSION_TTL = timedelta(hours=8)` e `is_expired(now)` puro; la serializacion JWT va en
     infraestructura (T-08).
 
-- [ ] T-03 (RF-12, CA-11) Acciones de auditoria, entrada de auditoria y error de autorizacion
+- [x] T-03 (RF-12, CA-11) Acciones de auditoria, entrada de auditoria y error de autorizacion
   - Nuevo `backend/app/domain/auth/audit.py`: `AuditAction(StrEnum)` (`LOGIN_SUCCESS`,
     `LOGIN_FAILED`, `LOGIN_BLOCKED`, `LOGOUT`, `USER_CREATE`, `USER_UPDATE`, `REQUIREMENT_CREATE`,
     `VERSION_UPDATE`, `VERSION_FREEZE`, `STATE_TRANSITION`, `SIGNATURE_REGISTERED`,
@@ -58,7 +58,7 @@ Commit de fase: `SPEC-008: dominio auth (roles, autorizacion, usuario, sesion, a
   - Nuevo `backend/app/domain/auth/errors.py`: `AccessDeniedError(DomainError)` con mensaje en
     espanol (el mapeo a 403 `forbidden` llega en T-24).
 
-- [ ] T-04 (RF-02, RF-08, RF-09, RF-13, CA-01, CA-04, CA-05, CA-06, CA-08, CA-09, CA-14) Pruebas de
+- [x] T-04 (RF-02, RF-08, RF-09, RF-13, CA-01, CA-04, CA-05, CA-06, CA-08, CA-09, CA-14) Pruebas de
   dominio
   - Nuevo `backend/tests/domain/test_authorization.py`: matriz completa por accion (incluye `ADMIN`
     sin firmas, CA-06/CA-07/CA-08), union de permisos con dos roles (CA-14), `AccessDeniedError` sin
@@ -72,7 +72,7 @@ Commit de fase: `SPEC-008: dominio auth (roles, autorizacion, usuario, sesion, a
 
 Commit de fase: `SPEC-008: puertos, configuracion y adaptadores PBKDF2/JWT`
 
-- [ ] T-05 (RF-01, RF-08, RF-09, RF-12, RF-13, RF-18) Puertos nuevos de identidad y auditoria
+- [x] T-05 (RF-01, RF-08, RF-09, RF-12, RF-13, RF-18) Puertos nuevos de identidad y auditoria
   - Nuevo `backend/app/application/ports/user_repository.py`: `UserRepository(ABC)` con
     `get_by_username`, `get`, `list_all`, `save` (unicidad de `USERNAME` traducida a
     `UsernameTakenError`, T-15).
@@ -86,7 +86,7 @@ Commit de fase: `SPEC-008: puertos, configuracion y adaptadores PBKDF2/JWT`
     intacta de `Principal`/`AuthProvider`; decision registrada: `Principal.user_id` porta el
     `username` (identidad legible usada como `ACTOR`/`CREATED_BY`). Export en `ports/__init__.py`.
 
-- [ ] T-06 (RF-09, RF-13, RF-16) Configuracion de autenticacion y semilla
+- [x] T-06 (RF-09, RF-13, RF-16) Configuracion de autenticacion y semilla
   - `backend/app/infrastructure/config.py`: `jwt_ttl_hours: int = 8`, `password_min_length: int = 8`,
     `password_hash_iterations: int`, `login_max_failed_attempts: int = 5` y semilla
     `seed_admin_username: str | None`, `seed_admin_password: SecretStr | None`,
@@ -96,7 +96,7 @@ Commit de fase: `SPEC-008: puertos, configuracion y adaptadores PBKDF2/JWT`
     `PASSWORD_MIN_LENGTH`, `LOGIN_MAX_FAILED_ATTEMPTS` y aviso explicito de que
     `SEED_ADMIN_PASSWORD` y `JWT_SECRET` son secretos: solo en `.env`, nunca en imagenes ni en git.
 
-- [ ] T-07 (RF-09, RF-15) Adaptador de hashing PBKDF2 (stdlib)
+- [x] T-07 (RF-09, RF-15) Adaptador de hashing PBKDF2 (stdlib)
   - Nuevo `backend/app/infrastructure/adapters/password_hasher.py`: `Pbkdf2PasswordHasher` con
     `hashlib.pbkdf2_hmac`, salt de `secrets.token_bytes`, iteraciones de
     `Settings.password_hash_iterations`, verificacion con `hmac.compare_digest` y formato
@@ -105,7 +105,7 @@ Commit de fase: `SPEC-008: puertos, configuracion y adaptadores PBKDF2/JWT`
   - Nuevo `backend/tests/infrastructure/test_password_hasher.py`: el hash no contiene la clave en
     claro, `verify` positivo/negativo y formato auto-descriptivo (RF-15).
 
-- [ ] T-08 (RF-01, RF-13, RF-15, CA-01, CA-03) Adaptador de token JWT HS256 (stdlib)
+- [x] T-08 (RF-01, RF-13, RF-15, CA-01, CA-03) Adaptador de token JWT HS256 (stdlib)
   - Nuevo `backend/app/infrastructure/adapters/jwt_token_service.py`: `JwtTokenService(TokenServicePort)`
     con header/payload JSON compacto, Base64URL y firma HMAC-SHA256 sobre `Settings.jwt_secret`;
     rechaza cualquier `alg` distinto de `HS256` (nunca `none`), firmas falsas y `exp` vencido
@@ -118,7 +118,7 @@ Commit de fase: `SPEC-008: puertos, configuracion y adaptadores PBKDF2/JWT`
 
 Commit de fase: `SPEC-008: tablas SYS_USUARIO/SYS_USUARIO_ROL y migracion 0004 con semilla ADMIN`
 
-- [ ] T-09 (RF-08, RF-12, CA-08) Tablas de usuario y definicion de auditoria en `tables.py` y mappers
+- [x] T-09 (RF-08, RF-12, CA-08) Tablas de usuario y definicion de auditoria en `tables.py` y mappers
   - `backend/app/infrastructure/db/tables.py`: `SYS_USUARIO` (`ID` identity, `USERNAME` unique
     `SYS_USUARIO_USERNAME_UQ`, `NOMBRE`, `PASSWORD_HASH`, `ACTIVO` CHECK `S`/`N`,
     `INTENTOS_FALLIDOS` CHECK `>= 0` default 0, auditoria) y `SYS_USUARIO_ROL` (`ID` identity,
@@ -129,7 +129,7 @@ Commit de fase: `SPEC-008: tablas SYS_USUARIO/SYS_USUARIO_ROL y migracion 0004 c
   - `backend/app/infrastructure/db/mappers.py`: mappers fila <-> `User` (`SYS_USUARIO` +
     `SYS_USUARIO_ROL`) y fila <-> `AuditEntry`.
 
-- [ ] T-10 (RF-10, RF-16, CA-10) Migracion Alembic `0004_usuarios_autenticacion` con semilla
+- [x] T-10 (RF-10, RF-16, CA-10) Migracion Alembic `0004_usuarios_autenticacion` con semilla
   - Nuevo `backend/alembic/versions/0004_usuarios_autenticacion.py`, `down_revision =
     "0003_documentos_generados"`; `upgrade` crea `SYS_USUARIO` y `SYS_USUARIO_ROL` (columnas, checks,
     FKs, unicos, indices, auditoria) y **siembra el `ADMIN` inicial**: credenciales desde
@@ -141,7 +141,7 @@ Commit de fase: `SPEC-008: tablas SYS_USUARIO/SYS_USUARIO_ROL y migracion 0004 c
   - `downgrade` elimina `SYS_USUARIO_ROL` y `SYS_USUARIO` (no toca `SYS_AUDITORIA`). Patron de
     `0003_documentos_generados.py`.
 
-- [ ] T-11 (RF-10, CA-10) Pruebas de integracion de la migracion y de la semilla
+- [x] T-11 (RF-10, CA-10) Pruebas de integracion de la migracion y de la semilla
   - `backend/tests/integration/conftest.py`: fixture autouse que hace `os.environ.setdefault` de
     `SEED_ADMIN_USERNAME`/`SEED_ADMIN_PASSWORD` (valores de prueba) antes de `command.upgrade(...)`
     para `migrated_engine` y `test_migration*.py`.
@@ -154,7 +154,7 @@ Commit de fase: `SPEC-008: tablas SYS_USUARIO/SYS_USUARIO_ROL y migracion 0004 c
 
 Commit de fase: `SPEC-008: repositorios de usuario/auditoria y AuthProvider local`
 
-- [ ] T-12 (RF-08, CA-08, CA-09) Repositorio de usuarios Oracle
+- [x] T-12 (RF-08, CA-08, CA-09) Repositorio de usuarios Oracle
   - Nuevo `backend/app/infrastructure/adapters/user_repository.py`: `SqlAlchemyUserRepository`
     (SQLAlchemy Core, mismo `Engine`/`sessionmaker`): lee/escribe `SYS_USUARIO` y `SYS_USUARIO_ROL`;
     baja logica con `ACTIVO='N'` (sin `DELETE`); asignaciones de roles reemplazadas por diferencia de
@@ -164,7 +164,7 @@ Commit de fase: `SPEC-008: repositorios de usuario/auditoria y AuthProvider loca
     `User` multi-rol con contador de intentos; unicidad de `USERNAME` -> `UsernameTakenError`
     (CA-08, CA-09).
 
-- [ ] T-13 (RF-12, CA-11) Grabador de auditoria Oracle
+- [x] T-13 (RF-12, CA-11) Grabador de auditoria Oracle
   - Nuevo `backend/app/infrastructure/adapters/audit_repository.py`: `SqlAlchemyAuditRecorder`
     inserta en `SYS_AUDITORIA` con `ACTOR` y `CREATED_BY` = actor y `DETALLE` serializado a JSON
     (`json.dumps`, `default=str` para fechas); `ENTIDAD_ID` puede ser `None` (login de usuario
@@ -173,7 +173,7 @@ Commit de fase: `SPEC-008: repositorios de usuario/auditoria y AuthProvider loca
     real con `ACTOR` real, `DETALLE` JSON valido que incluye el `motivo` de una transicion y
     recuperacion por `ENTIDAD`/`ENTIDAD_ID` (CA-11).
 
-- [ ] T-14 (RF-01, RF-08, RF-18) Adaptador local detras de `AuthProvider`
+- [x] T-14 (RF-01, RF-08, RF-18) Adaptador local detras de `AuthProvider`
   - Nuevo `backend/app/infrastructure/adapters/local_auth_provider.py`:
     `LocalJwtAuthProvider(AuthProvider)`: recibe `token_service`, `user_repository` y el valor de la
     cabecera `Authorization` (lo entrega la dependencia de request, T-27); `current_principal()`
@@ -187,14 +187,14 @@ Commit de fase: `SPEC-008: repositorios de usuario/auditoria y AuthProvider loca
 
 Commit de fase: `SPEC-008: casos de uso de autenticacion y gestion de usuarios`
 
-- [ ] T-15 (CA-02, CA-03, CA-04, CA-08, CA-09) Errores nuevos de aplicacion
+- [x] T-15 (CA-02, CA-03, CA-04, CA-08, CA-09) Errores nuevos de aplicacion
   - `backend/app/application/errors.py` (misma familia `ApplicationError`): `NotAuthenticatedError`
     (401 `unauthenticated`), `InvalidCredentialsError` (401 `invalid_credentials`, mensaje unico que
     no revela existencia, CA-02), `AccountLockedError` (401 `account_locked`), `UserNotFoundError`
     (404 `user_not_found`), `UsernameTakenError` (409 `username_taken`) y `SelfDeactivationError`
     (409 `self_deactivation_not_allowed`). El mapeo HTTP llega en T-24.
 
-- [ ] T-16 (RF-01, RF-09, CA-01, CA-02, CA-09) Caso de uso `AuthenticateUser`
+- [x] T-16 (RF-01, RF-09, CA-01, CA-02, CA-09) Caso de uso `AuthenticateUser`
   - Nuevo `backend/app/application/use_cases/auth/login.py`: `AuthenticateUser(user_repository,
     password_hasher, token_service, audit, *, session_ttl)`; `execute(usuario, contrasena)`:
     usuario inexistente o clave mala -> audit `LOGIN_FAILED` + `InvalidCredentialsError` (mensaje
@@ -203,7 +203,7 @@ Commit de fase: `SPEC-008: casos de uso de autenticacion y gestion de usuarios`
     revelar; exito -> reinicia el contador, audit `LOGIN_SUCCESS` y emite token de 8h con los roles
     actuales (CA-01). Export en `use_cases/auth/__init__.py`.
 
-- [ ] T-17 (RF-12, RF-14, CA-11) Casos de uso `LogoutUser` y `GetSession`
+- [x] T-17 (RF-12, RF-14, CA-11) Casos de uso `LogoutUser` y `GetSession`
   - Nuevo `backend/app/application/use_cases/auth/logout.py`: `LogoutUser(audit)`;
     `execute(principal)` registra `LOGOUT` (la invalidacion es por expiracion, stateless).
   - Nuevo `backend/app/application/use_cases/auth/get_session.py`: `GetSession(user_repository)`;
@@ -211,7 +211,7 @@ Commit de fase: `SPEC-008: casos de uso de autenticacion y gestion de usuarios`
     para RF-14).
   - Pruebas en `backend/tests/application/` con fakes (ver T-23).
 
-- [ ] T-18 (RF-08, RF-09, CA-08, CA-09) Casos de uso de gestion de usuarios
+- [x] T-18 (RF-08, RF-09, CA-08, CA-09) Casos de uso de gestion de usuarios
   - Nuevo `backend/app/application/use_cases/users/create_user.py`: `CreateUser(user_repository,
     password_hasher, audit)`; `execute(principal, ...)`: usuario duplicado -> `UsernameTakenError`;
     hash de la contrasena; audit `USER_CREATE` (RF-08, CA-08).
@@ -232,7 +232,7 @@ Commit de fase: `SPEC-008: casos de uso de autenticacion y gestion de usuarios`
 
 Commit de fase: `SPEC-008: actor real y auditoria en los flujos existentes`
 
-- [ ] T-19 (RF-11, RF-12, CA-11) Kwarg `principal`/`actor` en repositorios y casos de uso de
+- [x] T-19 (RF-11, RF-12, CA-11) Kwarg `principal`/`actor` en repositorios y casos de uso de
   requerimiento y versiones
   - `backend/app/application/ports/requirement_repository.py` y
     `backend/app/infrastructure/adapters/requirement_repository.py` (y
@@ -247,7 +247,7 @@ Commit de fase: `SPEC-008: actor real y auditoria en los flujos existentes`
     `REQ_VERSION` (RF-12).
   - Actualizar los tests existentes de `tests/application/` afectados por las firmas nuevas.
 
-- [ ] T-20 (RF-05, RF-12, RF-17, CA-05, CA-11) `TransitionRequirementState` sin `actor_id` y con
+- [x] T-20 (RF-05, RF-12, RF-17, CA-05, CA-11) `TransitionRequirementState` sin `actor_id` y con
   motivo auditado
   - `backend/app/application/use_cases/requirement/transition_requirement_state.py`: **elimina
     `actor_id`**; `execute(..., principal, a_estado, motivo)`; primero
@@ -258,14 +258,14 @@ Commit de fase: `SPEC-008: actor real y auditoria en los flujos existentes`
   - Actualizar `backend/tests/application/test_transition_requirement_state.py`: 403 de rol sin
     cambios de estado; exito con actor real y `motivo` auditado.
 
-- [ ] T-21 (RF-06, CA-06) `RegisterSignature` con control de rol sin cambiar ADR-007
+- [x] T-21 (RF-06, CA-06) `RegisterSignature` con control de rol sin cambiar ADR-007
   - `backend/app/application/use_cases/requirement/register_signature.py`:
     `ensure_signature_allowed(principal.roles, payload.rol)` antes de `ensure_signable` (403 si el
     rol no corresponde o si es `ADMIN`; la politica ADR-007 no cambia); `save(..., actor)` y audit
     `SIGNATURE_REGISTERED`.
   - Pruebas: rol correspondiente persiste; rol ajeno y `ADMIN` -> 403 sin persistir (CA-06).
 
-- [ ] T-22 (RF-07, RF-11, RF-12, CA-11) Documentos generados con actor real y auditoria
+- [x] T-22 (RF-07, RF-11, RF-12, CA-11) Documentos generados con actor real y auditoria
   - `backend/app/application/use_cases/requirement/generate_documents.py`: el kwarg `actor` deja de
     tener default `SYSTEM_ACTOR` (recibe el `principal`); `save(..., actor)` para `GENERADO_BY` y
     audit `DOCUMENT_GENERATED`.
@@ -274,7 +274,7 @@ Commit de fase: `SPEC-008: actor real y auditoria en los flujos existentes`
   - Actualizar `backend/tests/application/test_generate_documents.py` y
     `test_document_queries.py` (firmas con `principal`; aserciones `SYSTEM` -> usuario de prueba).
 
-- [ ] T-23 (RF-12, CA-11, CA-15) Pruebas de auditoria de casos de uso
+- [x] T-23 (RF-12, CA-11, CA-15) Pruebas de auditoria de casos de uso
   - Nuevo `backend/tests/application/test_auth_audit.py` (fakes): `LogoutUser` y las acciones de
     negocio registran `AuditEntry` con entidad/accion/actor/detalle correctos (transicion con
     `motivo`, CA-11); todo funciona sin ningun servicio de IA (`AI_PROVIDER=none`, CA-15).

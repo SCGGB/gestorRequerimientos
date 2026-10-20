@@ -3,13 +3,18 @@ from dataclasses import replace
 from typing import Any
 
 from app.application.errors import AttachmentNotFoundError
+from app.application.ports.audit_repository import AuditRecorderPort
+from app.application.ports.auth import Principal
 from app.application.ports.requirement_repository import RequirementRepository
 from app.application.use_cases.requirement._common import (
     load_editable_working_version,
     save_version,
 )
+from app.domain.auth.audit import AuditAction, AuditEntry
 from app.domain.requirement.attachment import Attachment
 from app.domain.requirement.version import RequirementVersion
+
+_AUDIT_ACTION = AuditAction.ATTACHMENT_UPDATE
 
 
 def _find(version: RequirementVersion, attachment_id: int) -> Attachment | None:
@@ -19,17 +24,43 @@ def _find(version: RequirementVersion, attachment_id: int) -> Attachment | None:
     return None
 
 
-class AddAttachment:
-    """Registra el metadato de un anexo en la version de trabajo."""
+class _AttachmentUseCase:
+    """Base con repositorio y auditoria compartidos por las operaciones de anexos."""
 
-    def __init__(self, repository: RequirementRepository) -> None:
+    def __init__(self, repository: RequirementRepository, audit: AuditRecorderPort) -> None:
         self._repository = repository
+        self._audit = audit
+
+    def _record(
+        self,
+        version: RequirementVersion,
+        operation: str,
+        actor: str,
+        attachment_id: int | None = None,
+    ) -> None:
+        detail: dict[str, object] = {"operacion": operation}
+        if attachment_id is not None:
+            detail["anexo_id"] = attachment_id
+        self._audit.record(
+            AuditEntry(
+                entity="REQ_VERSION",
+                entity_id=version.id,
+                action=_AUDIT_ACTION,
+                actor=actor,
+                detail=detail,
+            )
+        )
+
+
+class AddAttachment(_AttachmentUseCase):
+    """Registra el metadato de un anexo en la version de trabajo."""
 
     def execute(
         self,
         requirement_id: int,
         version_id: int,
         *,
+        principal: Principal,
         name: str,
         storage_key: str,
         mime_type: str | None = None,
@@ -47,15 +78,15 @@ class AddAttachment:
             caption=caption,
         )
         updated = replace(version, attachments=(*version.attachments, attachment))
-        saved = save_version(self._repository, requirement, version, updated)
+        saved = save_version(
+            self._repository, requirement, version, updated, actor=principal.user_id
+        )
+        self._record(version, "alta", principal.user_id)
         return saved.attachments[-1]
 
 
-class UpdateAttachment:
+class UpdateAttachment(_AttachmentUseCase):
     """Actualiza el metadato de un anexo de la version de trabajo."""
-
-    def __init__(self, repository: RequirementRepository) -> None:
-        self._repository = repository
 
     def execute(
         self,
@@ -63,6 +94,7 @@ class UpdateAttachment:
         version_id: int,
         attachment_id: int,
         *,
+        principal: Principal,
         name: str | None = None,
         storage_key: str | None = None,
         mime_type: str | None = None,
@@ -92,24 +124,26 @@ class UpdateAttachment:
                 for item in version.attachments
             ),
         )
-        saved = save_version(self._repository, requirement, version, updated)
+        saved = save_version(
+            self._repository, requirement, version, updated, actor=principal.user_id
+        )
+        self._record(version, "edicion", principal.user_id, attachment_id)
         reloaded = _find(saved, attachment_id)
         if reloaded is None:
             raise AttachmentNotFoundError()
         return reloaded
 
 
-class DeleteAttachment:
+class DeleteAttachment(_AttachmentUseCase):
     """Baja logica de un anexo de la version de trabajo (soft-delete)."""
-
-    def __init__(self, repository: RequirementRepository) -> None:
-        self._repository = repository
 
     def execute(
         self,
         requirement_id: int,
         version_id: int,
         attachment_id: int,
+        *,
+        principal: Principal,
     ) -> None:
         requirement, version = load_editable_working_version(
             self._repository, requirement_id, version_id
@@ -124,20 +158,22 @@ class DeleteAttachment:
                 for item in version.attachments
             ),
         )
-        save_version(self._repository, requirement, version, updated)
+        save_version(
+            self._repository, requirement, version, updated, actor=principal.user_id
+        )
+        self._record(version, "baja", principal.user_id, attachment_id)
 
 
-class ReorderAttachments:
+class ReorderAttachments(_AttachmentUseCase):
     """Reordena los anexos de la version de trabajo segun la lista de ids."""
-
-    def __init__(self, repository: RequirementRepository) -> None:
-        self._repository = repository
 
     def execute(
         self,
         requirement_id: int,
         version_id: int,
         ordered_ids: Sequence[int],
+        *,
+        principal: Principal,
     ) -> Sequence[Attachment]:
         requirement, version = load_editable_working_version(
             self._repository, requirement_id, version_id
@@ -163,5 +199,8 @@ class ReorderAttachments:
             replace(item, order=order) for order, item in enumerate(sequence, start=1)
         )
         updated = replace(version, attachments=renumbered)
-        saved = save_version(self._repository, requirement, version, updated)
+        saved = save_version(
+            self._repository, requirement, version, updated, actor=principal.user_id
+        )
+        self._record(version, "reorden", principal.user_id)
         return saved.attachments
