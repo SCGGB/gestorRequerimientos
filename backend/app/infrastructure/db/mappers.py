@@ -4,6 +4,9 @@ import json
 from collections.abc import Mapping, Sequence
 from typing import Any, cast
 
+from app.domain.auth.audit import AuditAction, AuditEntry
+from app.domain.auth.roles import Role
+from app.domain.auth.user import User
 from app.domain.requirement.attachment import Attachment
 from app.domain.requirement.catalog import ChangeType, Position
 from app.domain.requirement.document import DocumentFormat, GeneratedDocument
@@ -400,3 +403,71 @@ def generated_document_from_row(
         generated_by=str(row["GENERADO_BY"]),
         content=content,
     )
+
+
+# --- Usuarios y auditoria ---------------------------------------------------
+
+
+def user_to_row(user: User) -> dict[str, Any]:
+    row: dict[str, Any] = {
+        "USERNAME": user.username,
+        "NOMBRE": user.name,
+        "PASSWORD_HASH": user.password_hash,
+        "ACTIVO": _flag_to_char(user.active),
+        "INTENTOS_FALLIDOS": user.failed_attempts,
+    }
+    if user.id is not None:
+        row["ID"] = user.id
+    return row
+
+
+def user_from_row(row: Row, *, roles: frozenset[Role]) -> User:
+    return User(
+        id=_optional_int(row.get("ID")),
+        username=str(row["USERNAME"]),
+        name=str(row["NOMBRE"]),
+        password_hash=str(row["PASSWORD_HASH"]),
+        roles=roles,
+        active=_char_to_flag(row["ACTIVO"]),
+        failed_attempts=int(row["INTENTOS_FALLIDOS"]),
+    )
+
+
+def user_role_to_row(*, user_id: int, role: Role) -> dict[str, Any]:
+    return {"USUARIO_ID": user_id, "ROL": role.value}
+
+
+def user_role_from_row(row: Row) -> Role:
+    return Role(str(row["ROL"]))
+
+
+def audit_entry_to_row(entry: AuditEntry) -> dict[str, Any]:
+    detail = None
+    if entry.detail is not None:
+        detail = json.dumps(dict(entry.detail), ensure_ascii=False, default=str)
+    return {
+        "ENTIDAD": entry.entity,
+        "ENTIDAD_ID": entry.entity_id,
+        "ACCION": entry.action.value,
+        "ACTOR": entry.actor,
+        "DETALLE": detail,
+        "CREATED_AT": entry.created_at,
+        "CREATED_BY": entry.actor,
+    }
+
+
+def audit_entry_from_row(row: Row) -> AuditEntry:
+    detail_raw = row.get("DETALLE")
+    detail: Mapping[str, Any] | None = None
+    if detail_raw not in (None, ""):
+        parsed = json.loads(str(detail_raw))
+        detail = parsed if isinstance(parsed, dict) else None
+    return AuditEntry(
+        entity=str(row["ENTIDAD"]),
+        entity_id=_optional_int(row.get("ENTIDAD_ID")),
+        action=AuditAction(str(row["ACCION"])),
+        actor=str(row["ACTOR"]) if row.get("ACTOR") is not None else "",
+        detail=detail,
+        created_at=row.get("CREATED_AT"),
+    )
+

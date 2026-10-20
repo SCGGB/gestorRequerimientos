@@ -37,6 +37,55 @@ def _audit_columns() -> tuple[Column[Any], ...]:
 
 ROLES = ("ELABORO", "REVISO", "AUTORIZO")
 STATUS = ("BORRADOR", "EN_REVISION", "VALIDADO", "APROBADO", "GENERADO", "CANCELADO")
+ALL_ROLES = ("ELABORO", "REVISO", "AUTORIZO", "ADMIN")
+
+SYS_AUDITORIA = Table(
+    "SYS_AUDITORIA",
+    metadata,
+    Column("ID", _ID, Identity(always=True), primary_key=True, nullable=False),
+    Column("ENTIDAD", String(100), nullable=False),
+    Column("ENTIDAD_ID", _ID, nullable=True),
+    Column("ACCION", String(50), nullable=False),
+    Column("ACTOR", String(100), nullable=True),
+    Column("DETALLE", Text, nullable=True),
+    *_audit_columns(),
+    CheckConstraint("DETALLE IS JSON", name="SYS_AUDITORIA_DETALLE_CK"),
+    Index("SYS_AUDITORIA_ENTIDAD_IX", "ENTIDAD", "ENTIDAD_ID"),
+)
+
+SYS_USUARIO = Table(
+    "SYS_USUARIO",
+    metadata,
+    Column("ID", _ID, Identity(always=True), primary_key=True, nullable=False),
+    Column("USERNAME", String(100), nullable=False),
+    Column("NOMBRE", String(150), nullable=False),
+    Column("PASSWORD_HASH", String(255), nullable=False),
+    Column("ACTIVO", CHAR(1), nullable=False),
+    Column("INTENTOS_FALLIDOS", _ORDER, nullable=False),
+    *_audit_columns(),
+    UniqueConstraint("USERNAME", name="SYS_USUARIO_USERNAME_UQ"),
+    CheckConstraint("ACTIVO IN ('S','N')", name="SYS_USUARIO_ACTIVO_CK"),
+    CheckConstraint("INTENTOS_FALLIDOS >= 0", name="SYS_USUARIO_INTENTOS_CK"),
+)
+
+SYS_USUARIO_ROL = Table(
+    "SYS_USUARIO_ROL",
+    metadata,
+    Column("ID", _ID, Identity(always=True), primary_key=True, nullable=False),
+    Column(
+        "USUARIO_ID",
+        _ID,
+        ForeignKey("SYS_USUARIO.ID", name="SYS_USUARIO_ROL_USUARIO_FK"),
+        nullable=False,
+    ),
+    Column("ROL", String(20), nullable=False),
+    *_audit_columns(),
+    UniqueConstraint("USUARIO_ID", "ROL", name="SYS_USUARIO_ROL_UQ"),
+    CheckConstraint(
+        "ROL IN ('ELABORO','REVISO','AUTORIZO','ADMIN')", name="SYS_USUARIO_ROL_ROL_CK"
+    ),
+    Index("SYS_USUARIO_ROL_USUARIO_IX", "USUARIO_ID"),
+)
 
 REQ_TIPO_CAMBIO = Table(
     "REQ_TIPO_CAMBIO",
