@@ -1,4 +1,5 @@
 from app.api.schemas.attachment import AttachmentCreate, AttachmentUpdate
+from app.api.schemas.auth import LoginRequest, LoginResponse, SesionResponse
 from app.api.schemas.catalog import ChangeTypeResponse, PositionResponse
 from app.api.schemas.collection import (
     BenefitCreate,
@@ -35,6 +36,7 @@ from app.api.schemas.requirement import (
     VersionResponse,
     VersionUpdate,
 )
+from app.api.schemas.user import UsuarioCreate, UsuarioResponse, UsuarioUpdate
 from app.api.schemas.validation import (
     StateTransitionRequest,
     StateTransitionResponse,
@@ -60,6 +62,8 @@ __all__ = [
     "GenerateDocumentsRequest",
     "GeneratedDocumentResponse",
     "HealthResponse",
+    "LoginRequest",
+    "LoginResponse",
     "NewVersionRequest",
     "PositionResponse",
     "PreviewBlockResponse",
@@ -73,11 +77,15 @@ __all__ = [
     "RequirementPage",
     "RequirementResponse",
     "RequirementSummary",
+    "SesionResponse",
     "SignatureCreate",
     "SignatureResponse",
     "StateTransitionRequest",
     "StateTransitionResponse",
     "StatusChangeRequest",
+    "UsuarioCreate",
+    "UsuarioResponse",
+    "UsuarioUpdate",
     "ValidationErrorSchema",
     "ValidationRequest",
     "ValidationResultResponse",

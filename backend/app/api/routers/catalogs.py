@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import (
+    get_current_principal,
     get_list_change_types_use_case,
     get_list_positions_use_case,
 )
@@ -13,7 +14,11 @@ from app.application.use_cases.requirement.list_catalogs import (
 )
 from app.domain.requirement.enums import SignatureRole
 
-router = APIRouter(prefix="/api/v1", tags=["catalogos"])
+router = APIRouter(
+    prefix="/api/v1",
+    tags=["catalogos"],
+    dependencies=[Depends(get_current_principal)],
+)
 
 
 @router.get("/catalogos/tipos-cambio", response_model=list[ChangeTypeResponse])

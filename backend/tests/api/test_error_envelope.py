@@ -2,11 +2,12 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_requirement_repository
 from app.main import create_app
+from tests.api.helpers import build_app
 from tests.application.fakes import InMemoryRequirementRepository
 
 
 def test_error_envelope_structure() -> None:
-    app = create_app()
+    app = build_app()
     app.dependency_overrides[get_requirement_repository] = lambda: InMemoryRequirementRepository()
     client = TestClient(app)
     r = client.get("/api/v1/requerimientos/999")

@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Response, status
 
 from app.api.dependencies import (
+    get_current_principal,
     get_transition_requirement_state_use_case,
     get_validate_requirement_version_use_case,
 )
@@ -12,6 +13,7 @@ from app.api.schemas.validation import (
     ValidationRequest,
     ValidationResultResponse,
 )
+from app.application.ports.auth import Principal
 from app.application.use_cases.requirement.transition_requirement_state import (
     TransitionRequirementState,
 )
@@ -19,7 +21,11 @@ from app.application.use_cases.requirement.validate_requirement_version import (
     ValidateRequirementVersion,
 )
 
-router = APIRouter(prefix="/api/v1", tags=["validacion"])
+router = APIRouter(
+    prefix="/api/v1",
+    tags=["validacion"],
+    dependencies=[Depends(get_current_principal)],
+)
 
 
 @router.post(
@@ -51,6 +57,7 @@ def validate_version(
 def transition_state(
     requirement_id: int,
     payload: StateTransitionRequest,
+    principal: Annotated[Principal, Depends(get_current_principal)],
     use_case: Annotated[
         TransitionRequirementState,
         Depends(get_transition_requirement_state_use_case),
@@ -60,8 +67,8 @@ def transition_state(
     outcome = use_case.execute(
         requirement_id,
         payload.a_estado,
+        principal=principal,
         reason=payload.motivo,
-        actor_id=payload.actor_id,
     )
     if not outcome.is_valid:
         response.status_code = status.HTTP_400_BAD_REQUEST

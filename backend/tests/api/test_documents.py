@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from app.api.dependencies import (
+    get_audit_recorder,
     get_document_converter,
     get_document_renderer,
     get_requirement_document_repository,
@@ -12,8 +13,9 @@ from app.domain.requirement.enums import RequirementStatus, SignatureRole
 from app.domain.requirement.requirement import Requirement
 from app.domain.requirement.signature import Signature
 from app.domain.requirement.version import RequirementVersion
-from app.main import create_app
+from tests.api.helpers import build_app
 from tests.application.fakes import (
+    FakeAuditRecorder,
     FakeDocumentConverter,
     FakeDocumentRenderer,
     InMemoryRequirementDocumentRepository,
@@ -53,7 +55,7 @@ def _seed(
 ) -> int:
     version = _signed_version() if signed else complete_version()
     requirement = repository.save(
-        Requirement(folio=folio, status=status, versions=(version,))
+        Requirement(folio=folio, status=status, versions=(version,)), actor="tester"
     )
     assert requirement.id is not None
     return requirement.id
@@ -66,11 +68,12 @@ def _client(
     renderer: FakeDocumentRenderer | None = None,
     converter: FakeDocumentConverter | None = None,
 ) -> TestClient:
-    app = create_app()
+    app = build_app()
     app.dependency_overrides[get_requirement_repository] = lambda: repository
     app.dependency_overrides[get_requirement_document_repository] = (
         lambda: document_repository
     )
+    app.dependency_overrides[get_audit_recorder] = lambda: FakeAuditRecorder()
     app.dependency_overrides[get_document_renderer] = (
         lambda: renderer or FakeDocumentRenderer()
     )
@@ -97,7 +100,7 @@ def test_generate_documents_returns_two_documents_and_transitions() -> None:
         "T#5-v1.0.pdf",
     }
     assert all(document["plantilla_version"] == "v1" for document in body)
-    assert all(document["generado_by"] == "SYSTEM" for document in body)
+    assert all(document["generado_by"] == "tester" for document in body)
     assert all(document["version_id"] > 0 for document in body)
     assert all(set(document) == _DOCUMENT_KEYS for document in body)
     assert client.get(f"/api/v1/requerimientos/{requirement_id}").json()["estado"] == (

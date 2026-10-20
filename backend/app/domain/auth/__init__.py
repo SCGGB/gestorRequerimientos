@@ -7,7 +7,7 @@ from app.domain.auth.authorization import (
     ensure_transition_allowed,
     required_roles,
 )
-from app.domain.auth.errors import AccessDeniedError, AuthDomainError
+from app.domain.auth.errors import AccessDeniedError
 from app.domain.auth.roles import Role
 from app.domain.auth.session import SESSION_TTL, Session
 from app.domain.auth.user import (
@@ -24,7 +24,6 @@ __all__ = [
     "Action",
     "AuditAction",
     "AuditEntry",
-    "AuthDomainError",
     "InactiveUserError",
     "Role",
     "SelfDeactivationError",

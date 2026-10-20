@@ -9,11 +9,13 @@ from app.application.errors import (
     DocumentNotFoundError,
     DuplicateFolioError,
     RequirementNotFoundError,
+    UsernameTakenError,
 )
 from app.application.ports.audit_repository import AuditRecorderPort
 from app.application.ports.catalog_repository import ChangeTypeCatalog, PositionCatalog
 from app.application.ports.document_converter import DocumentConverterPort
 from app.application.ports.document_renderer import DocumentRendererPort
+from app.application.ports.password_hasher import PasswordHasherPort
 from app.application.ports.requirement_document_repository import (
     RequirementDocumentRepository,
 )
@@ -21,7 +23,12 @@ from app.application.ports.requirement_repository import (
     RequirementRepository,
     RequirementSearchFilters,
 )
+from app.application.ports.token_service import TokenServicePort
+from app.application.ports.user_repository import UserRepository
 from app.domain.auth.audit import AuditEntry
+from app.domain.auth.roles import Role
+from app.domain.auth.session import Session
+from app.domain.auth.user import User
 from app.domain.requirement.catalog import ChangeType, Position
 from app.domain.requirement.document import GeneratedDocument
 from app.domain.requirement.enums import SignatureRole
@@ -230,3 +237,76 @@ class FakePositionCatalog(PositionCatalog):
             if position.id == position_id:
                 return position
         return None
+
+
+class InMemoryUserRepository(UserRepository):
+    """Repositorio de usuarios en memoria con ids estables (sin base de datos)."""
+
+    def __init__(self, users: Sequence[User] = ()) -> None:
+        self._users: dict[int, User] = {}
+        self._ids = count(1)
+        for user in users:
+            self.save(user)
+
+    def get_by_username(self, username: str) -> User | None:
+        for user in self._users.values():
+            if user.username == username:
+                return user
+        return None
+
+    def get(self, user_id: int) -> User | None:
+        return self._users.get(user_id)
+
+    def list_all(self) -> Sequence[User]:
+        return tuple(sorted(self._users.values(), key=lambda user: user.username))
+
+    def save(self, user: User) -> User:
+        for existing in self._users.values():
+            if existing.username == user.username and existing.id != user.id:
+                raise UsernameTakenError()
+        assigned = replace(user, id=next(self._ids)) if user.id is None else user
+        self._users[assigned.id] = assigned
+        return assigned
+
+
+class FakePasswordHasher(PasswordHasherPort):
+    """Hash trivial para pruebas: el 'hash' es la clave en claro con prefijo."""
+
+    def hash(self, password: str) -> str:
+        return f"fake${password}"
+
+    def verify(self, password: str, encoded: str) -> bool:
+        return encoded == f"fake${password}"
+
+
+class FakeTokenService(TokenServicePort):
+    """Emite tokens predecibles y registra las sesiones emitidas."""
+
+    def __init__(self) -> None:
+        self.issued: list[Session] = []
+
+    def issue(self, session: Session) -> str:
+        self.issued.append(session)
+        return f"token-{session.user_id}"
+
+    def parse(self, token: str) -> Session | None:
+        return None
+
+
+def make_user(
+    username: str = "ana",
+    *,
+    roles: frozenset[Role] = frozenset({Role.ELABORO}),
+    failed_attempts: int = 0,
+    active: bool = True,
+    password: str = "secreto123",
+) -> User:
+    """Usuario de prueba con hash compatible con ``FakePasswordHasher``."""
+    return User(
+        username=username,
+        name=f"Usuario {username}",
+        password_hash=f"fake${password}",
+        roles=roles,
+        active=active,
+        failed_attempts=failed_attempts,
+    )

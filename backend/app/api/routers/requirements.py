@@ -6,12 +6,14 @@ from app.api.dependencies import (
     get_build_preview_document_use_case,
     get_change_status_use_case,
     get_create_requirement_use_case,
+    get_current_principal,
     get_freeze_and_advance_use_case,
     get_get_requirement_use_case,
     get_get_requirement_version_use_case,
     get_list_requirements_use_case,
     get_list_versions_use_case,
     get_update_version_use_case,
+    require_action,
 )
 from app.api.schemas.preview import PreviewDocumentResponse
 from app.api.schemas.requirement import (
@@ -25,6 +27,7 @@ from app.api.schemas.requirement import (
     VersionUpdate,
 )
 from app.application.errors import VersionNotFoundError
+from app.application.ports.auth import Principal
 from app.application.use_cases.requirement.build_preview_document import (
     BuildPreviewDocument,
 )
@@ -35,9 +38,14 @@ from app.application.use_cases.requirement.get_requirement import GetRequirement
 from app.application.use_cases.requirement.list_requirements import ListRequirements
 from app.application.use_cases.requirement.list_versions import GetVersion, ListVersions
 from app.application.use_cases.requirement.update_version import UpdateVersion
+from app.domain.auth.authorization import Action
 from app.domain.requirement.enums import RequirementStatus
 
-router = APIRouter(prefix="/api/v1", tags=["requerimientos"])
+router = APIRouter(
+    prefix="/api/v1",
+    tags=["requerimientos"],
+    dependencies=[Depends(get_current_principal)],
+)
 
 
 @router.post(
@@ -47,6 +55,7 @@ router = APIRouter(prefix="/api/v1", tags=["requerimientos"])
 )
 def create_requirement(
     payload: RequirementCreate,
+    principal: Annotated[Principal, Depends(require_action(Action.REQUIREMENT_WRITE))],
     use_case: Annotated[CreateRequirement, Depends(get_create_requirement_use_case)],
 ) -> RequirementResponse:
     requirement = use_case.execute(
@@ -56,12 +65,14 @@ def create_requirement(
         system=payload.sistema,
         document_version=payload.version_documento,
         version_date=payload.fecha_version,
+        principal=principal,
     )
     return RequirementResponse.from_domain(requirement)
 
 
 @router.get("/requerimientos", response_model=RequirementPage)
 def list_requirements(
+    principal: Annotated[Principal, Depends(get_current_principal)],
     use_case: Annotated[ListRequirements, Depends(get_list_requirements_use_case)],
     estado: RequirementStatus | None = None,
     folio: int | None = None,
@@ -80,6 +91,7 @@ def list_requirements(
 @router.get("/requerimientos/{requirement_id}", response_model=RequirementResponse)
 def get_requirement(
     requirement_id: int,
+    principal: Annotated[Principal, Depends(get_current_principal)],
     use_case: Annotated[GetRequirement, Depends(get_get_requirement_use_case)],
 ) -> RequirementResponse:
     return RequirementResponse.from_domain(use_case.execute(requirement_id))
@@ -91,6 +103,7 @@ def get_requirement(
 )
 def list_versions(
     requirement_id: int,
+    principal: Annotated[Principal, Depends(get_current_principal)],
     use_case: Annotated[ListVersions, Depends(get_list_versions_use_case)],
 ) -> list[VersionResponse]:
     return [
@@ -105,6 +118,7 @@ def list_versions(
 def get_version(
     requirement_id: int,
     version_id: int,
+    principal: Annotated[Principal, Depends(get_current_principal)],
     use_case: Annotated[GetVersion, Depends(get_get_requirement_version_use_case)],
 ) -> VersionResponse:
     return VersionResponse.from_domain(use_case.execute(requirement_id, version_id))
@@ -117,6 +131,7 @@ def get_version(
 def get_version_preview(
     requirement_id: int,
     version_id: int,
+    principal: Annotated[Principal, Depends(get_current_principal)],
     use_case: Annotated[
         BuildPreviewDocument, Depends(get_build_preview_document_use_case)
     ],
@@ -133,9 +148,12 @@ def update_version(
     requirement_id: int,
     version_id: int,
     payload: VersionUpdate,
+    principal: Annotated[Principal, Depends(require_action(Action.REQUIREMENT_WRITE))],
     use_case: Annotated[UpdateVersion, Depends(get_update_version_use_case)],
 ) -> VersionResponse:
-    requirement = use_case.execute(requirement_id, version_id, payload.to_edit())
+    requirement = use_case.execute(
+        requirement_id, version_id, payload.to_edit(), principal=principal
+    )
     version = requirement.version_by_id(version_id)
     if version is None:
         raise VersionNotFoundError()
@@ -150,6 +168,7 @@ def update_version(
 def create_version(
     requirement_id: int,
     payload: NewVersionRequest,
+    principal: Annotated[Principal, Depends(require_action(Action.REQUIREMENT_WRITE))],
     use_case: Annotated[FreezeAndAdvance, Depends(get_freeze_and_advance_use_case)],
 ) -> RequirementResponse:
     requirement = use_case.execute(
@@ -157,6 +176,7 @@ def create_version(
         document_version=payload.version_documento,
         version_date=payload.fecha_version,
         title=payload.titulo,
+        principal=principal,
     )
     return RequirementResponse.from_domain(requirement)
 
@@ -165,7 +185,8 @@ def create_version(
 def change_status(
     requirement_id: int,
     payload: StatusChangeRequest,
+    principal: Annotated[Principal, Depends(get_current_principal)],
     use_case: Annotated[ChangeStatus, Depends(get_change_status_use_case)],
 ) -> RequirementResponse:
-    requirement = use_case.execute(requirement_id, payload.nuevo_estado)
+    requirement = use_case.execute(requirement_id, payload.nuevo_estado, principal=principal)
     return RequirementResponse.from_domain(requirement)

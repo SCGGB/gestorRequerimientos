@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from app.api.dependencies import get_requirement_repository
+from app.api.dependencies import get_audit_recorder, get_requirement_repository
 from app.application.ports.requirement_repository import RequirementRepository
 from app.domain.requirement.enums import RequirementStatus, SignatureRole
 from app.domain.requirement.signature import Signature
-from app.main import create_app
-from tests.application.fakes import InMemoryRequirementRepository
+from tests.api.helpers import build_app
+from tests.application.fakes import FakeAuditRecorder, InMemoryRequirementRepository
 from tests.factories import requirement_with
 
 
@@ -17,14 +17,20 @@ def _seed(
     status: RequirementStatus = RequirementStatus.BORRADOR,
     **overrides: object,
 ) -> int:
-    requirement = repository.save(requirement_with(status=status, **overrides))
+    requirement = repository.save(
+        requirement_with(status=status, **overrides), actor="seed"
+    )
     assert requirement.id is not None
     return requirement.id
 
 
-def _client(repository: RequirementRepository) -> TestClient:
-    app = create_app()
+def _client(
+    repository: RequirementRepository,
+    audit: FakeAuditRecorder | None = None,
+) -> TestClient:
+    app = build_app()
     app.dependency_overrides[get_requirement_repository] = lambda: repository
+    app.dependency_overrides[get_audit_recorder] = lambda: audit or FakeAuditRecorder()
     return TestClient(app)
 
 
@@ -45,6 +51,47 @@ def test_valid_transition_returns_200_and_persists() -> None:
     assert body["transicion_valida"] is True
     detail = client.get(f"/api/v1/requerimientos/{requirement_id}")
     assert detail.json()["estado"] == "EN_REVISION"
+
+
+def test_transition_with_insufficient_role_returns_403_and_state_unchanged() -> None:
+    repository = InMemoryRequirementRepository()
+    requirement_id = _seed(repository)
+    app = build_app("REVISO")
+    app.dependency_overrides[get_requirement_repository] = lambda: repository
+    app.dependency_overrides[get_audit_recorder] = lambda: FakeAuditRecorder()
+    client = TestClient(app)
+
+    response = client.post(
+        f"/api/v1/requerimientos/{requirement_id}/transicionar",
+        json={"a_estado": "EN_REVISION"},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "forbidden"
+    assert (
+        client.get(f"/api/v1/requerimientos/{requirement_id}").json()["estado"]
+        == "BORRADOR"
+    )
+
+
+def test_success_audits_motivo_and_sets_updated_by() -> None:
+    repository = InMemoryRequirementRepository()
+    audit = FakeAuditRecorder()
+    requirement_id = _seed(repository)
+    client = _client(repository, audit)
+
+    response = client.post(
+        f"/api/v1/requerimientos/{requirement_id}/transicionar",
+        json={"a_estado": "EN_REVISION", "motivo": "Listo para revision"},
+    )
+
+    assert response.status_code == 200
+    assert repository.last_actor == "tester"
+    entry = audit.find("STATE_TRANSITION")
+    assert entry is not None
+    assert entry.actor == "tester"
+    assert entry.detail is not None
+    assert entry.detail["motivo"] == "Listo para revision"
 
 
 def test_forbidden_transition_returns_400_with_body() -> None:

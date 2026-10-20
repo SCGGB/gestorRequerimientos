@@ -2,11 +2,16 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 
-from app.api.dependencies import get_register_signature_use_case
+from app.api.dependencies import get_current_principal, get_register_signature_use_case
 from app.api.schemas.requirement import SignatureCreate, SignatureResponse
+from app.application.ports.auth import Principal
 from app.application.use_cases.requirement.register_signature import RegisterSignature
 
-router = APIRouter(prefix="/api/v1", tags=["firmas"])
+router = APIRouter(
+    prefix="/api/v1",
+    tags=["firmas"],
+    dependencies=[Depends(get_current_principal)],
+)
 
 
 @router.post(
@@ -18,6 +23,7 @@ def register_signature(
     requirement_id: int,
     version_id: int,
     payload: SignatureCreate,
+    principal: Annotated[Principal, Depends(get_current_principal)],
     use_case: Annotated[RegisterSignature, Depends(get_register_signature_use_case)],
 ) -> SignatureResponse:
     signature = use_case.execute(
@@ -27,5 +33,6 @@ def register_signature(
         name=payload.nombre,
         position=payload.cargo,
         position_id=payload.cargo_id,
+        principal=principal,
     )
     return SignatureResponse.from_domain(signature)

@@ -9,6 +9,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.schemas.errors import ErrorDetail, ErrorResponse
 from app.application.errors import (
+    AccountLockedError,
     ApplicationError,
     AttachmentNotFoundError,
     CollectionItemNotFoundError,
@@ -17,9 +18,15 @@ from app.application.errors import (
     DocumentGenerationNotAllowedError,
     DocumentNotFoundError,
     DuplicateFolioError,
+    InvalidCredentialsError,
+    NotAuthenticatedError,
     RequirementNotFoundError,
+    SelfDeactivationError,
+    UsernameTakenError,
+    UserNotFoundError,
     VersionNotFoundError,
 )
+from app.domain.auth.errors import AccessDeniedError
 from app.domain.requirement.errors import (
     AuthorizationNotOnCurrentVersionError,
     DomainError,
@@ -36,6 +43,8 @@ def _code_for_request_validation(_exc: RequestValidationError) -> str:
 
 
 def _map_domain(exc: DomainError) -> tuple[str, int, str | None]:
+    if isinstance(exc, AccessDeniedError):
+        return "forbidden", status.HTTP_403_FORBIDDEN, None
     if isinstance(exc, InvalidStateTransitionError):
         return "invalid_state_transition", status.HTTP_409_CONFLICT, None
     if isinstance(exc, AuthorizationNotOnCurrentVersionError):
@@ -52,6 +61,18 @@ def _map_domain(exc: DomainError) -> tuple[str, int, str | None]:
 
 
 def _map_application(exc: ApplicationError) -> tuple[str, int, Any]:
+    if isinstance(exc, NotAuthenticatedError):
+        return "unauthenticated", status.HTTP_401_UNAUTHORIZED, None
+    if isinstance(exc, InvalidCredentialsError):
+        return "invalid_credentials", status.HTTP_401_UNAUTHORIZED, None
+    if isinstance(exc, AccountLockedError):
+        return "account_locked", status.HTTP_401_UNAUTHORIZED, None
+    if isinstance(exc, UserNotFoundError):
+        return "user_not_found", status.HTTP_404_NOT_FOUND, None
+    if isinstance(exc, UsernameTakenError):
+        return "username_taken", status.HTTP_409_CONFLICT, None
+    if isinstance(exc, SelfDeactivationError):
+        return "self_deactivation_not_allowed", status.HTTP_409_CONFLICT, None
     if isinstance(exc, DuplicateFolioError):
         return "duplicate_folio", status.HTTP_409_CONFLICT, None
     if isinstance(exc, DataConflictError):

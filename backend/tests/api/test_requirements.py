@@ -1,14 +1,18 @@
 from fastapi.testclient import TestClient
 
-from app.api.dependencies import get_requirement_repository
+from app.api.dependencies import get_audit_recorder, get_requirement_repository
+from app.application.ports.auth import Principal
 from app.application.ports.requirement_repository import RequirementRepository
-from app.main import create_app
-from tests.application.fakes import InMemoryRequirementRepository
+from tests.api.helpers import build_app
+from tests.application.fakes import FakeAuditRecorder, InMemoryRequirementRepository
+
+TESTER = Principal(user_id="tester", roles=frozenset({"ELABORO", "ADMIN"}))
 
 
 def _client_with_repository(repository: RequirementRepository) -> TestClient:
-    app = create_app()
+    app = build_app()
     app.dependency_overrides[get_requirement_repository] = lambda: repository
+    app.dependency_overrides[get_audit_recorder] = lambda: FakeAuditRecorder()
     return TestClient(app)
 
 
@@ -39,8 +43,9 @@ def test_list_requirements_pagination() -> None:
         CreateRequirement,
     )
 
-    uc = CreateRequirement(repo)
+    uc = CreateRequirement(repo, FakeAuditRecorder())
     uc.execute(
+        principal=TESTER,
         folio=1,
         title="A",
         change_type_id=1,
@@ -49,6 +54,7 @@ def test_list_requirements_pagination() -> None:
         version_date="2026-10-15",
     )
     uc.execute(
+        principal=TESTER,
         folio=2,
         title="B",
         change_type_id=1,
@@ -72,8 +78,9 @@ def test_list_requirements_includes_titulo() -> None:
         CreateRequirement,
     )
 
-    uc = CreateRequirement(repo)
+    uc = CreateRequirement(repo, FakeAuditRecorder())
     uc.execute(
+        principal=TESTER,
         folio=7,
         title="Titulo vigente",
         change_type_id=1,
@@ -102,8 +109,9 @@ def test_patch_working_version_ok() -> None:
         CreateRequirement,
     )
 
-    uc = CreateRequirement(repo)
+    uc = CreateRequirement(repo, FakeAuditRecorder())
     req = uc.execute(
+        principal=TESTER,
         folio=5,
         title="T",
         change_type_id=1,
@@ -128,8 +136,9 @@ def test_folio_duplicate_409() -> None:
         CreateRequirement,
     )
 
-    uc = CreateRequirement(repo)
+    uc = CreateRequirement(repo, FakeAuditRecorder())
     uc.execute(
+        principal=TESTER,
         folio=10,
         title="A",
         change_type_id=1,

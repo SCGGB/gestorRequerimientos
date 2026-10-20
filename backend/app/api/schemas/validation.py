@@ -47,7 +47,6 @@ class ValidationRequest(BaseModel):
 class StateTransitionRequest(BaseModel):
     a_estado: str
     motivo: str | None = None
-    actor_id: int | None = None
 
 
 class StateTransitionResponse(BaseModel):

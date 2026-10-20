@@ -1,6 +1,5 @@
-class AuthDomainError(Exception):
-    """Error base del dominio de autenticacion."""
+from app.domain.requirement.errors import DomainError
 
 
-class AccessDeniedError(AuthDomainError):
+class AccessDeniedError(DomainError):
     """El usuario autenticado no tiene permiso para la accion solicitada."""

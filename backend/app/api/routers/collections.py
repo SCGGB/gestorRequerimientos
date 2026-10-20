@@ -4,9 +4,11 @@ from fastapi import APIRouter, Depends, status
 
 from app.api.dependencies import (
     get_add_collection_item_use_case,
+    get_current_principal,
     get_delete_collection_item_use_case,
     get_reorder_collection_items_use_case,
     get_update_collection_item_use_case,
+    require_action,
 )
 from app.api.schemas.collection import (
     BenefitCreate,
@@ -17,15 +19,21 @@ from app.api.schemas.collection import (
 from app.api.schemas.requirement import (
     VersionResponse,
 )
+from app.application.ports.auth import Principal
 from app.application.use_cases.requirement.manage_collection import (
     AddCollectionItem,
     DeleteCollectionItem,
     ReorderCollectionItems,
     UpdateCollectionItem,
 )
+from app.domain.auth.authorization import Action
 from app.domain.requirement.collections import CollectionKind
 
-router = APIRouter(prefix="/api/v1", tags=["colecciones"])
+router = APIRouter(
+    prefix="/api/v1",
+    tags=["colecciones"],
+    dependencies=[Depends(get_current_principal)],
+)
 
 _RESOURCE_TO_KIND: dict[str, CollectionKind] = {
     "objetivos": CollectionKind.OBJETIVOS,
@@ -63,6 +71,7 @@ def add_item(
         "requisitos-futuros",
     ],
     payload: CollectionItemCreate | BenefitCreate,
+    principal: Annotated[Principal, Depends(require_action(Action.REQUIREMENT_WRITE))],
     use_case: Annotated[AddCollectionItem, Depends(get_add_collection_item_use_case)],
 ) -> VersionResponse:
     kind = _to_kind(coleccion)
@@ -73,6 +82,7 @@ def add_item(
         requirement_id,
         version_id,
         kind,
+        principal=principal,
         content=payload.contenido,
         benefit_kind=benefit_kind,
     )
@@ -97,6 +107,7 @@ def update_item(
     ],
     item_id: int,
     payload: CollectionItemUpdate,
+    principal: Annotated[Principal, Depends(require_action(Action.REQUIREMENT_WRITE))],
     use_case: Annotated[
         UpdateCollectionItem, Depends(get_update_collection_item_use_case)
     ],
@@ -107,6 +118,7 @@ def update_item(
         version_id,
         kind,
         item_id,
+        principal=principal,
         content=payload.contenido,
     )
     return VersionResponse.from_domain(version_updated)
@@ -129,12 +141,15 @@ def delete_item(
         "requisitos-futuros",
     ],
     item_id: int,
+    principal: Annotated[Principal, Depends(require_action(Action.REQUIREMENT_WRITE))],
     use_case: Annotated[
         DeleteCollectionItem, Depends(get_delete_collection_item_use_case)
     ],
 ) -> None:
     kind = _to_kind(coleccion)
-    use_case.execute(requirement_id, version_id, kind, item_id)
+    use_case.execute(
+        requirement_id, version_id, kind, item_id, principal=principal
+    )
 
 
 @router.put(
@@ -154,12 +169,13 @@ def reorder_items(
         "requisitos-futuros",
     ],
     payload: ReorderRequest,
+    principal: Annotated[Principal, Depends(require_action(Action.REQUIREMENT_WRITE))],
     use_case: Annotated[
         ReorderCollectionItems, Depends(get_reorder_collection_items_use_case)
     ],
 ) -> VersionResponse:
     kind = _to_kind(coleccion)
     version_updated = use_case.execute(
-        requirement_id, version_id, kind, ordered_ids=payload.ids
+        requirement_id, version_id, kind, ordered_ids=payload.ids, principal=principal
     )
     return VersionResponse.from_domain(version_updated)

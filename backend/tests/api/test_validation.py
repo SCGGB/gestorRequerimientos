@@ -6,7 +6,7 @@ from app.api.dependencies import get_requirement_repository
 from app.application.ports.requirement_repository import RequirementRepository
 from app.domain.requirement.enums import SignatureRole
 from app.domain.requirement.signature import Signature
-from app.main import create_app
+from tests.api.helpers import build_app
 from tests.application.fakes import InMemoryRequirementRepository
 from tests.factories import requirement_with
 
@@ -14,7 +14,7 @@ from tests.factories import requirement_with
 def _seed(
     repository: InMemoryRequirementRepository, **overrides: object
 ) -> tuple[int, int]:
-    requirement = repository.save(requirement_with(**overrides))
+    requirement = repository.save(requirement_with(**overrides), actor="tester")
     assert requirement.id is not None
     version = requirement.current_version()
     assert version is not None
@@ -23,7 +23,7 @@ def _seed(
 
 
 def _client(repository: RequirementRepository) -> TestClient:
-    app = create_app()
+    app = build_app()
     app.dependency_overrides[get_requirement_repository] = lambda: repository
     return TestClient(app)
 
