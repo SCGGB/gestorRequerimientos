@@ -4,7 +4,24 @@
  * y en produccion el proxy de Nginx. No se embebe la URL interna del backend.
  */
 
+import { getToken } from "./token";
+
 const API_BASE = "/api/v1";
+const LOGIN_PATH = "/auth/login";
+
+/*
+ * Evento de sesion vencida (SPEC-008, RF-14): lo emite el cliente ante un 401
+ * y lo consume `AuthContext` para mostrar el overlay de login conservando la
+ * ruta. Se ignora en `/auth/login` para no disparar el overlay con las
+ * credenciales incorrectas del propio formulario.
+ */
+export const SESSION_EXPIRED_EVENT = "gestor:session-expired";
+
+function emitSessionExpired(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+  }
+}
 
 interface ErrorEnvelope {
   error?: {
@@ -92,13 +109,24 @@ export async function requestBlob(
 
 async function send(path: string, options: RequestOptions): Promise<Response> {
   const { method = "GET", body, signal } = options;
-  return fetch(`${API_BASE}${path}`, {
+  const headers: Record<string, string> = {};
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
+  const token = getToken();
+  if (token !== null) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  const response = await fetch(`${API_BASE}${path}`, {
     method,
-    headers:
-      body === undefined ? undefined : { "Content-Type": "application/json" },
+    headers: Object.keys(headers).length === 0 ? undefined : headers,
     body: body === undefined ? undefined : JSON.stringify(body),
     signal,
   });
+  if (response.status === 401 && path !== LOGIN_PATH) {
+    emitSessionExpired();
+  }
+  return response;
 }
 
 function fileNameFromDisposition(disposition: string | null): string {

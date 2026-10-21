@@ -10,6 +10,7 @@ from app.api.dependencies import (
     get_update_collection_item_use_case,
     require_action,
 )
+from app.api.openapi import FORBIDDEN_RESPONSE, UNAUTHENTICATED_RESPONSE
 from app.api.schemas.collection import (
     BenefitCreate,
     CollectionItemCreate,
@@ -33,6 +34,7 @@ router = APIRouter(
     prefix="/api/v1",
     tags=["colecciones"],
     dependencies=[Depends(get_current_principal)],
+    responses={401: UNAUTHENTICATED_RESPONSE, 403: FORBIDDEN_RESPONSE},
 )
 
 _RESOURCE_TO_KIND: dict[str, CollectionKind] = {

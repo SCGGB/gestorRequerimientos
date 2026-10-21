@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from app.api.dependencies import get_current_principal, get_register_signature_use_case
+from app.api.openapi import FORBIDDEN_RESPONSE, UNAUTHENTICATED_RESPONSE
 from app.api.schemas.requirement import SignatureCreate, SignatureResponse
 from app.application.ports.auth import Principal
 from app.application.use_cases.requirement.register_signature import RegisterSignature
@@ -11,6 +12,7 @@ router = APIRouter(
     prefix="/api/v1",
     tags=["firmas"],
     dependencies=[Depends(get_current_principal)],
+    responses={401: UNAUTHENTICATED_RESPONSE, 403: FORBIDDEN_RESPONSE},
 )
 
 

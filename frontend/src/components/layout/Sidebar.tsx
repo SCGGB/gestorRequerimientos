@@ -1,3 +1,4 @@
+import { useAuth } from "../../auth/AuthContext";
 import { useNav } from "../../navigation/NavContext";
 import type { AppView, SidebarKey } from "../../navigation/NavContext";
 
@@ -5,6 +6,7 @@ interface NavItem {
   key: SidebarKey;
   label: string;
   view: AppView;
+  adminOnly?: boolean;
 }
 
 const items: NavItem[] = [
@@ -29,10 +31,20 @@ const items: NavItem[] = [
     label: "Configuracion y Catalogos",
     view: { name: "placeholder", title: "Configuracion y Catalogos" },
   },
+  {
+    key: "users",
+    label: "Gestion de usuarios",
+    view: { name: "users" },
+    adminOnly: true,
+  },
 ];
 
 export function Sidebar() {
   const { activeKey, navigate } = useNav();
+  const { hasRole } = useAuth();
+  const visibleItems = items.filter(
+    (item) => item.adminOnly !== true || hasRole("ADMIN"),
+  );
 
   return (
     <nav
@@ -41,7 +53,7 @@ export function Sidebar() {
       className="w-full shrink-0 border-b border-border bg-surface md:w-64 md:border-b-0 md:border-r"
     >
       <ul className="flex gap-1 overflow-x-auto p-2 md:flex-col md:overflow-visible md:p-4">
-        {items.map((item) => {
+        {visibleItems.map((item) => {
           const active = item.key === activeKey;
           return (
             <li key={item.key} className="shrink-0 md:w-full">

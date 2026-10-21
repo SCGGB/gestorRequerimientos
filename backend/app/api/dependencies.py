@@ -367,6 +367,10 @@ def require_action(action: Action) -> Callable[..., Principal]:
     return dependency
 
 
+def get_session_ttl_seconds() -> int:
+    return get_settings().jwt_ttl_hours * 3600
+
+
 def get_authenticate_use_case(
     user_repository: Annotated[UserRepository, Depends(get_user_repository)],
     password_hasher: Annotated[PasswordHasherPort, Depends(get_password_hasher)],

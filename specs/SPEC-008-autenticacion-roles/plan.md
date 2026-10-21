@@ -22,10 +22,11 @@ La spec se traduce a la arquitectura hexagonal (ADR-002) en cinco frentes, en es
 Decisiones de diseno:
 
 - **Autenticacion local JWT tras `AuthProvider` (ADR-003)**: token HS256 de 8 horas sin refresh
-  (decision 7). El token transporta **solo identidad** (`sub` = usuario, `iat`, `exp`), nunca datos de
-  negocio; en cada peticion el adaptador verifica firma y expiracion y **recarga el usuario desde
-  `SYS_USUARIO`** para confirmar que sigue activo y tomar sus roles actuales: la BD es la fuente de
-  verdad y un usuario desactivado deja de operar con su siguiente peticion (RF-08, RF-13, decision 7).
+  (decision 7). El token transporta **solo identidad** (`sub` = usuario, `roles`, `iat`, `exp`), nunca
+  datos de negocio; en cada peticion el adaptador verifica firma y expiracion y **recarga el usuario
+  desde `SYS_USUARIO`** para confirmar que sigue activo y tomar sus roles actuales: la BD es la fuente
+  de verdad (los `roles` del token son informativos y no se confian) y un usuario desactivado deja de
+  operar con su siguiente peticion (RF-08, RF-13, decision 7).
 - **Sin dependencias nuevas (RF-15)**: JWT con stdlib (`hmac`, `hashlib.sha256`, `base64`, `json`) y
   contrasenas con `hashlib.pbkdf2_hmac` (PBKDF2-HMAC-SHA256, salt aleatorio, formato
   `pbkdf2_sha256$<iteraciones>$<salt>$<hash>`, verificacion con `hmac.compare_digest`). Justificacion:

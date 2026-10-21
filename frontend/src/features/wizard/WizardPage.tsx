@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 
-import { ApiError } from "../../api";
+import { ApiError, getRequirement } from "../../api";
 import type { VersionUpdatePayload } from "../../api";
+import { useAuth } from "../../auth/AuthContext";
 import { useAutosave } from "../../hooks/useAutosave";
 import { useNav } from "../../navigation/NavContext";
 import { WIZARD_STEPS, completionIssue, isComplete } from "./wizardSteps";
@@ -76,6 +77,7 @@ function renderStep(stepIndex: number, dirty: boolean): ReactNode {
 
 export function WizardPage() {
   const { navigate } = useNav();
+  const { status } = useAuth();
   const { state, dispatch } = useWizard();
   const { stepIndex, stepStatus, dirty, error, requirementId, versionId } = state;
 
@@ -97,6 +99,30 @@ export function WizardPage() {
       });
     },
   });
+
+  const previousStatusRef = useRef(status);
+  useEffect(() => {
+    const wasAuthenticated = previousStatusRef.current === "authenticated";
+    previousStatusRef.current = status;
+    if (status !== "authenticated" || wasAuthenticated) {
+      return;
+    }
+    void (async () => {
+      await autosave.flush();
+      if (requirementId === null || versionId === null) {
+        return;
+      }
+      try {
+        const requirement = await getRequirement(requirementId);
+        const version = requirement.versiones.find((item) => item.id === versionId);
+        if (version !== undefined) {
+          dispatch({ type: "REFRESH_VERSION", version });
+        }
+      } catch {
+        // La vista en memoria se conserva si el refresco falla.
+      }
+    })();
+  }, [status, autosave.flush, requirementId, versionId, dispatch]);
 
   const versionPayload = useMemo(
     () => buildVersionPayload(state.header, state.narrative),

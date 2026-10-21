@@ -15,6 +15,7 @@ from app.api.dependencies import (
     get_update_version_use_case,
     require_action,
 )
+from app.api.openapi import FORBIDDEN_RESPONSE, UNAUTHENTICATED_RESPONSE
 from app.api.schemas.preview import PreviewDocumentResponse
 from app.api.schemas.requirement import (
     NewVersionRequest,
@@ -45,6 +46,7 @@ router = APIRouter(
     prefix="/api/v1",
     tags=["requerimientos"],
     dependencies=[Depends(get_current_principal)],
+    responses={401: UNAUTHENTICATED_RESPONSE},
 )
 
 
@@ -52,6 +54,7 @@ router = APIRouter(
     "/requerimientos",
     response_model=RequirementResponse,
     status_code=status.HTTP_201_CREATED,
+    responses={403: FORBIDDEN_RESPONSE},
 )
 def create_requirement(
     payload: RequirementCreate,
@@ -143,6 +146,7 @@ def get_version_preview(
 @router.patch(
     "/requerimientos/{requirement_id}/versiones/{version_id}",
     response_model=VersionResponse,
+    responses={403: FORBIDDEN_RESPONSE},
 )
 def update_version(
     requirement_id: int,
@@ -164,6 +168,7 @@ def update_version(
     "/requerimientos/{requirement_id}/versiones",
     response_model=RequirementResponse,
     status_code=status.HTTP_201_CREATED,
+    responses={403: FORBIDDEN_RESPONSE},
 )
 def create_version(
     requirement_id: int,
@@ -181,7 +186,11 @@ def create_version(
     return RequirementResponse.from_domain(requirement)
 
 
-@router.post("/requerimientos/{requirement_id}/estado", response_model=RequirementResponse)
+@router.post(
+    "/requerimientos/{requirement_id}/estado",
+    response_model=RequirementResponse,
+    responses={403: FORBIDDEN_RESPONSE},
+)
 def change_status(
     requirement_id: int,
     payload: StatusChangeRequest,

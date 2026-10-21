@@ -7,6 +7,7 @@ from app.api.dependencies import (
     get_transition_requirement_state_use_case,
     get_validate_requirement_version_use_case,
 )
+from app.api.openapi import FORBIDDEN_RESPONSE, UNAUTHENTICATED_RESPONSE
 from app.api.schemas.validation import (
     StateTransitionRequest,
     StateTransitionResponse,
@@ -25,6 +26,7 @@ router = APIRouter(
     prefix="/api/v1",
     tags=["validacion"],
     dependencies=[Depends(get_current_principal)],
+    responses={401: UNAUTHENTICATED_RESPONSE},
 )
 
 
@@ -53,6 +55,7 @@ def validate_version(
 @router.post(
     "/requerimientos/{requirement_id}/transicionar",
     response_model=StateTransitionResponse,
+    responses={403: FORBIDDEN_RESPONSE},
 )
 def transition_state(
     requirement_id: int,

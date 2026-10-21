@@ -9,7 +9,14 @@ from app.api.dependencies import (
     get_update_user_use_case,
     require_action,
 )
+from app.api.openapi import (
+    FORBIDDEN_RESPONSE,
+    UNAUTHENTICATED_RESPONSE,
+    conflict_response,
+    not_found_response,
+)
 from app.api.schemas.user import UsuarioCreate, UsuarioResponse, UsuarioUpdate
+from app.application.errors import UserNotFoundError
 from app.application.ports.auth import Principal
 from app.application.use_cases.users.create_user import CreateUser
 from app.application.use_cases.users.list_users import ListUsers
@@ -17,10 +24,18 @@ from app.application.use_cases.users.update_user import UpdateUser
 from app.domain.auth.authorization import Action
 from app.domain.auth.roles import Role
 
+USER_NOT_FOUND = not_found_response("user_not_found", "El usuario no existe.")
+USERNAME_TAKEN = conflict_response("username_taken", "El nombre de usuario ya existe.")
+SELF_DEACTIVATION = conflict_response(
+    "self_deactivation_not_allowed",
+    "Un usuario no puede desactivarse a si mismo.",
+)
+
 router = APIRouter(
     prefix="/api/v1",
     tags=["usuarios"],
     dependencies=[Depends(require_action(Action.MANAGE_USERS))],
+    responses={401: UNAUTHENTICATED_RESPONSE, 403: FORBIDDEN_RESPONSE},
 )
 
 
@@ -35,7 +50,7 @@ def list_users(
             id=u.id or 0,
             usuario=u.username,
             nombre=u.name,
-                roles=sorted(u.roles),
+            roles=sorted(u.roles),
             activo=bool(u.active),
             intentos_fallidos=u.failed_attempts,
         )
@@ -43,7 +58,11 @@ def list_users(
     ]
 
 
-@router.get("/usuarios/{usuario_id}", response_model=UsuarioResponse)
+@router.get(
+    "/usuarios/{usuario_id}",
+    response_model=UsuarioResponse,
+    responses={404: USER_NOT_FOUND},
+)
 def get_user(
     usuario_id: int,
     principal: Annotated[Principal, Depends(get_current_principal)],
@@ -56,16 +75,19 @@ def get_user(
                 id=u.id or 0,
                 usuario=u.username,
                 nombre=u.name,
-            roles=sorted(u.roles),
+                roles=sorted(u.roles),
                 activo=bool(u.active),
                 intentos_fallidos=u.failed_attempts,
             )
-    from app.application.errors import UserNotFoundError
-
     raise UserNotFoundError()
 
 
-@router.post("/usuarios", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/usuarios",
+    response_model=UsuarioResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={409: USERNAME_TAKEN},
+)
 def create_user(
     payload: UsuarioCreate,
     principal: Annotated[Principal, Depends(get_current_principal)],
@@ -89,7 +111,11 @@ def create_user(
     )
 
 
-@router.patch("/usuarios/{usuario_id}", response_model=UsuarioResponse)
+@router.patch(
+    "/usuarios/{usuario_id}",
+    response_model=UsuarioResponse,
+    responses={404: USER_NOT_FOUND, 409: SELF_DEACTIVATION},
+)
 def update_user(
     usuario_id: int,
     payload: UsuarioUpdate,

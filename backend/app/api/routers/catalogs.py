@@ -7,6 +7,7 @@ from app.api.dependencies import (
     get_list_change_types_use_case,
     get_list_positions_use_case,
 )
+from app.api.openapi import UNAUTHENTICATED_RESPONSE
 from app.api.schemas.catalog import ChangeTypeResponse, PositionResponse
 from app.application.use_cases.requirement.list_catalogs import (
     ListChangeTypes,
@@ -18,6 +19,7 @@ router = APIRouter(
     prefix="/api/v1",
     tags=["catalogos"],
     dependencies=[Depends(get_current_principal)],
+    responses={401: UNAUTHENTICATED_RESPONSE},
 )
 
 

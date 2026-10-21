@@ -42,6 +42,27 @@ const NARRATIVE_KEYS = [
   "requisitos_futuros_texto",
 ];
 
+export type Role = "ELABORO" | "REVISO" | "AUTORIZO" | "ADMIN";
+
+export interface UsuarioMock {
+  id: number;
+  usuario: string;
+  nombre: string;
+  roles: Role[];
+  activo: boolean;
+  intentos_fallidos: number;
+}
+
+export interface BackendOptions {
+  authenticated?: boolean;
+  unauthorized?: boolean;
+  roles?: Role[];
+  usuario?: string;
+  nombre?: string;
+}
+
+const ALL_ROLES: Role[] = ["ELABORO", "REVISO", "AUTORIZO", "ADMIN"];
+
 export interface BackendState {
   total: number;
   createError: { status: number; code: string; message: string } | null;
@@ -55,6 +76,13 @@ export interface BackendState {
     | "CANCELADO";
   documentError: { status: number; code: string; message: string } | null;
   documents: GeneratedDocumentMock[];
+  authenticated: boolean;
+  unauthorized: boolean;
+  roles: Role[];
+  usuario: string;
+  nombre: string;
+  loginError: { status: number; code: string; message: string } | null;
+  users: UsuarioMock[];
   captured: {
     createBodies: Array<Record<string, unknown>>;
     patchBodies: Array<Record<string, unknown>>;
@@ -165,7 +193,14 @@ function emptyCollections(): Record<CollectionKey, Item[]> {
   };
 }
 
-export function installBackend(page: Page): BackendState {
+export function installBackend(
+  page: Page,
+  options: BackendOptions = {},
+): BackendState {
+  const roles = options.roles ?? ALL_ROLES;
+  const usuario = options.usuario ?? "tester";
+  const nombre = options.nombre ?? "Usuario tester";
+  const authenticated = options.authenticated ?? true;
   const state: BackendState = {
     total: 1,
     createError: null,
@@ -173,6 +208,15 @@ export function installBackend(page: Page): BackendState {
     requirementStatus: "BORRADOR",
     documentError: null,
     documents: [],
+    authenticated,
+    unauthorized: options.unauthorized ?? false,
+    roles,
+    usuario,
+    nombre,
+    loginError: null,
+    users: [
+      { id: 1, usuario, nombre, roles, activo: true, intentos_fallidos: 0 },
+    ],
     captured: {
       createBodies: [],
       patchBodies: [],
@@ -181,6 +225,12 @@ export function installBackend(page: Page): BackendState {
     },
     collections: emptyCollections(),
   };
+
+  if (authenticated) {
+    void page.addInitScript(() => {
+      window.localStorage.setItem("gestor.auth.token", "e2e-token");
+    });
+  }
 
   let nextItemId = 100;
   let nextDocumentId = 1;
@@ -235,6 +285,138 @@ export function installBackend(page: Page): BackendState {
     const url = new URL(request.url());
     const method = request.method();
     const path = url.pathname.replace(/^\/api\/v1/, "");
+
+    if (path === "/auth/login" && method === "POST") {
+      const body = JSON.parse(request.postData() ?? "{}") as {
+        usuario?: string;
+      };
+      if (state.loginError !== null) {
+        await route.fulfill({
+          status: state.loginError.status,
+          json: {
+            error: {
+              code: state.loginError.code,
+              message: state.loginError.message,
+              details: null,
+            },
+          },
+        });
+        return;
+      }
+      state.authenticated = true;
+      if (body.usuario !== undefined) {
+        state.usuario = body.usuario;
+      }
+      await route.fulfill({
+        json: {
+          token: "e2e-token",
+          tipo_token: "Bearer",
+          expira_en: 28800,
+          usuario: state.usuario,
+        },
+      });
+      return;
+    }
+
+    if (path === "/auth/sesion" && method === "GET") {
+      if (!state.authenticated || state.unauthorized) {
+        await route.fulfill({
+          status: 401,
+          json: {
+            error: {
+              code: "unauthenticated",
+              message: "Sesion no valida.",
+              details: null,
+            },
+          },
+        });
+        return;
+      }
+      await route.fulfill({
+        json: {
+          id: 1,
+          usuario: state.usuario,
+          nombre: state.nombre,
+          roles: state.roles,
+          activo: true,
+        },
+      });
+      return;
+    }
+
+    if (path === "/auth/logout" && method === "POST") {
+      state.authenticated = false;
+      await route.fulfill({ status: 204, body: "" });
+      return;
+    }
+
+    if (state.unauthorized && !path.startsWith("/auth/")) {
+      await route.fulfill({
+        status: 401,
+        json: {
+          error: {
+            code: "unauthenticated",
+            message: "Sesion no valida.",
+            details: null,
+          },
+        },
+      });
+      return;
+    }
+
+    if (path === "/usuarios" && method === "GET") {
+      await route.fulfill({ json: state.users });
+      return;
+    }
+
+    if (path === "/usuarios" && method === "POST") {
+      const body = JSON.parse(request.postData() ?? "{}") as Record<
+        string,
+        unknown
+      >;
+      const created: UsuarioMock = {
+        id: state.users.length + 1,
+        usuario: String(body.usuario ?? ""),
+        nombre: String(body.nombre ?? ""),
+        roles: (body.roles as Role[] | undefined) ?? [],
+        activo: body.activo !== false,
+        intentos_fallidos: 0,
+      };
+      state.users = [...state.users, created];
+      await route.fulfill({ status: 201, json: created });
+      return;
+    }
+
+    const userMatch = path.match(/^\/usuarios\/(\d+)$/);
+    if (userMatch !== null && method === "GET") {
+      const found = state.users.find((item) => item.id === Number(userMatch[1]));
+      if (found === undefined) {
+        await route.fulfill({
+          status: 404,
+          json: {
+            error: { code: "user_not_found", message: "No existe.", details: null },
+          },
+        });
+        return;
+      }
+      await route.fulfill({ json: found });
+      return;
+    }
+
+    if (userMatch !== null && method === "PATCH") {
+      const id = Number(userMatch[1]);
+      const body = JSON.parse(request.postData() ?? "{}") as Record<
+        string,
+        unknown
+      >;
+      state.users = state.users.map((item) =>
+        item.id === id
+          ? { ...item, ...body, id: item.id, intentos_fallidos: 0 }
+          : item,
+      );
+      await route.fulfill({ json: state.users.find((item) => item.id === id) });
+      return;
+    }
 
     if (path === "/catalogos/tipos-cambio" && method === "GET") {
       await route.fulfill({

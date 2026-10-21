@@ -1,11 +1,19 @@
 import { useState } from "react";
 
+import { ApiError } from "../../../../api";
 import type { RequirementStatus } from "../../../../api";
+import { useAuth } from "../../../../auth/AuthContext";
 import { Button } from "../../../../components/ui/Button";
 
 const GENERATABLE_STATUSES: RequirementStatus[] = ["APROBADO", "GENERADO"];
 
-function disabledReason(status: RequirementStatus | null): string | null {
+function disabledReason(
+  status: RequirementStatus | null,
+  canGenerate: boolean,
+): string | null {
+  if (!canGenerate) {
+    return "Su rol no permite generar documentos (requiere Autorizo o Administrador).";
+  }
   if (status === null) {
     return "Guarde el requerimiento para generar documentos.";
   }
@@ -13,6 +21,16 @@ function disabledReason(status: RequirementStatus | null): string | null {
     return null;
   }
   return "La generacion solo esta disponible cuando el requerimiento esta APROBADO.";
+}
+
+function errorMessage(error: Error | null): string | null {
+  if (error === null) {
+    return null;
+  }
+  if (error instanceof ApiError && error.code === "forbidden") {
+    return "No tiene permiso para generar documentos.";
+  }
+  return error.message;
 }
 
 export interface DocumentActionsProps {
@@ -28,8 +46,11 @@ export function DocumentActions({
   error,
   onGenerate,
 }: DocumentActionsProps) {
+  const { hasRole } = useAuth();
   const [message, setMessage] = useState<string | null>(null);
-  const reason = disabledReason(status);
+  const canGenerate = hasRole("AUTORIZO") || hasRole("ADMIN");
+  const reason = disabledReason(status, canGenerate);
+  const errorText = errorMessage(error);
 
   const handleGenerate = async () => {
     setMessage(null);
@@ -53,12 +74,12 @@ export function DocumentActions({
           <p className="text-xs text-neutral-dark">{reason}</p>
         )}
       </div>
-      {error !== null && (
+      {errorText !== null && (
         <p
           role="alert"
           className="rounded border border-danger/40 bg-danger/10 px-3 py-2 text-sm text-danger"
         >
-          {error.message}
+          {errorText}
         </p>
       )}
       {message !== null && (

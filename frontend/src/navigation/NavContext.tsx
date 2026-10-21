@@ -4,7 +4,8 @@ export type AppView =
   | { name: "list" }
   | { name: "wizard"; requirementId?: number }
   | { name: "placeholder"; title: string }
-  | { name: "overview" };
+  | { name: "overview" }
+  | { name: "users" };
 
 export type SidebarKey =
   | "requirements"
@@ -12,7 +13,8 @@ export type SidebarKey =
   | "templates"
   | "repository"
   | "settings"
-  | "overview";
+  | "overview"
+  | "users";
 
 export interface NavContextValue {
   view: AppView;

@@ -283,7 +283,7 @@ Commit de fase: `SPEC-008: actor real y auditoria en los flujos existentes`
 
 Commit de fase: `SPEC-008: enforcement por roles y endpoints auth/usuarios`
 
-- [ ] T-24 (CA-02, CA-03, CA-04, CA-08) Mapeo de los errores nuevos al envelope existente
+- [x] T-24 (CA-02, CA-03, CA-04, CA-08) Mapeo de los errores nuevos al envelope existente
   - `backend/app/api/errors.py`: mapear `NotAuthenticatedError`/`InvalidCredentialsError`/
     `AccountLockedError` a **401** (`unauthenticated`/`invalid_credentials`/`account_locked`),
     `AccessDeniedError` (dominio, via `_map_domain`) a **403** `forbidden`, `UserNotFoundError` a
@@ -293,7 +293,7 @@ Commit de fase: `SPEC-008: enforcement por roles y endpoints auth/usuarios`
     `400` especial (no envelope) para fallos de validacion, pero su `403` de rol si usa el envelope
     (CA-05).
 
-- [ ] T-25 (RF-17, CA-11) Esquemas de autenticacion, usuarios y cambio de `/transicionar`
+- [x] T-25 (RF-17, CA-11) Esquemas de autenticacion, usuarios y cambio de `/transicionar`
   - Nuevo `backend/app/api/schemas/auth.py`: `LoginRequest(usuario, contrasena)`, `LoginResponse`,
     `SesionResponse`; nuevo `backend/app/api/schemas/user.py`: `UsuarioCreate` (contrasena
     `min_length=8` -> 422 en forma, decision del plan), `UsuarioUpdate` (todo opcional) y
@@ -303,7 +303,7 @@ Commit de fase: `SPEC-008: enforcement por roles y endpoints auth/usuarios`
     y **elimina `actor_id`** (RF-17; un consumidor que aun lo envie no recibe 422: Pydantic ignora
     campos extra).
 
-- [ ] T-26 (RF-01, RF-08, RF-14, CA-01, CA-08) Routers `auth.py` y `users.py`
+- [x] T-26 (RF-01, RF-08, RF-14, CA-01, CA-08) Routers `auth.py` y `users.py`
   - Nuevo `backend/app/api/routers/auth.py` (`prefix="/api/v1"`, tag `autenticacion`, sin logica de
     negocio): `POST /auth/login` (**publica**, 200 `LoginResponse`), `POST /auth/logout` (204, audit
     `LOGOUT`) y `GET /auth/sesion` (200 `SesionResponse`, decision propia del plan para RF-14).
@@ -314,7 +314,7 @@ Commit de fase: `SPEC-008: enforcement por roles y endpoints auth/usuarios`
   - `backend/app/main.py` y `backend/app/api/routers/__init__.py`: registrar ambos routers;
     factorias de los casos de uso en `dependencies.py` (patron existente).
 
-- [ ] T-27 (RF-03, RF-04, CA-03, CA-04, CA-13, CA-14) Enforcement por dependencias sobre TODOS los
+- [x] T-27 (RF-03, RF-04, CA-03, CA-04, CA-13, CA-14) Enforcement por dependencias sobre TODOS los
   endpoints de `/api/v1`
   - `backend/app/api/dependencies.py`: `get_auth_provider(request)` (instancia `LocalJwtAuthProvider`
     segun `Settings.auth_provider`, T-14), `get_current_principal(auth) -> Principal` (lanza
@@ -330,7 +330,7 @@ Commit de fase: `SPEC-008: enforcement por roles y endpoints auth/usuarios`
   - Orden de enforcement: 401 -> 403 -> reglas de negocio (400/404/409); las tres filas dinamicas
     (transicion, firma, autodesactivacion) quedan en los casos de uso (T-18, T-20, T-21).
 
-- [ ] T-28 (RF-01, RF-08, RF-14, CA-01, CA-02, CA-08, CA-09) Pruebas de API de login, sesion y
+- [x] T-28 (RF-01, RF-08, RF-14, CA-01, CA-02, CA-08, CA-09) Pruebas de API de login, sesion y
   usuarios
   - Nuevo `backend/tests/api/conftest.py`: fixture `client` + `client_as(*roles)` que sobreescribe
     `get_current_principal` con un `Principal` de prueba; las pruebas existentes que no miden auth
@@ -341,7 +341,7 @@ Commit de fase: `SPEC-008: enforcement por roles y endpoints auth/usuarios`
     (CA-08), autodesactivacion 409 (CA-08), reinicio de intentos por PATCH (CA-09), 404 y 409
     `username_taken`.
 
-- [ ] T-29 (RF-03, RF-04, RF-05, RF-06, RF-07, RF-11, CA-03, CA-04, CA-05, CA-06, CA-07, CA-11,
+- [x] T-29 (RF-03, RF-04, RF-05, RF-06, RF-07, RF-11, CA-03, CA-04, CA-05, CA-06, CA-07, CA-11,
   CA-13, CA-14) Pruebas de enforcement y adaptacion de las pruebas existentes
   - Nuevo `backend/tests/api/test_auth_enforcement.py`: **401 con envelope** en endpoints de lectura
     y escritura sin token, con token invalido y con token expirado (CA-03); **403 con envelope y sin
@@ -356,7 +356,7 @@ Commit de fase: `SPEC-008: enforcement por roles y endpoints auth/usuarios`
 
 Commit de fase: `SPEC-008: documentar autenticacion, autorizacion y auditoria en api.md`
 
-- [ ] T-30 (RF-03, RF-04, RF-08, RF-17, CA-11) Actualizar `doc/technical/api.md`
+- [x] T-30 (RF-03, RF-04, RF-08, RF-17, CA-11) Actualizar `doc/technical/api.md`
   - Nueva seccion `### Autenticacion y usuarios (SPEC-008)` con `/auth/login`, `/auth/logout`,
     `/auth/sesion` y `/usuarios` (metodos, exitos, errores 401/403/404/409 del envelope y esquemas
     `LoginRequest`/`LoginResponse`/`SesionResponse`/`UsuarioResponse`).
@@ -369,7 +369,7 @@ Commit de fase: `SPEC-008: documentar autenticacion, autorizacion y auditoria en
 
 Commit de fase: `SPEC-008: frontend de sesion, overlay de login y gestion de usuarios`
 
-- [ ] T-31 (RF-14, CA-12) Cliente API con Bearer y manejo de 401/403
+- [x] T-31 (RF-14, CA-12) Cliente API con Bearer y manejo de 401/403
   - Nuevo `frontend/src/api/token.ts`: almacenamiento del token en `localStorage`
     (`get/set/clear`); sin refresh (la expiracion la resuelve el backend con 401).
   - `frontend/src/api/client.ts`: `send()` agrega `Authorization: Bearer <token>` cuando existe; ante
@@ -380,7 +380,7 @@ Commit de fase: `SPEC-008: frontend de sesion, overlay de login y gestion de usu
     `frontend/src/api/users.ts` (`listUsers`, `getUser`, `createUser`, `updateUser`); tipos
     `LoginResponse`, `Usuario`, `UsuarioPayload` en `api/types.ts` y export en `api/index.ts`.
 
-- [ ] T-32 (RF-13, RF-14, CA-12) Contexto de sesion y overlay de login que conserva la vista
+- [x] T-32 (RF-13, RF-14, CA-12) Contexto de sesion y overlay de login que conserva la vista
   - Nuevo `frontend/src/auth/AuthContext.tsx` + `useAuth()`: estado
     `checking | anonymous | authenticated` con `{usuario, nombre, roles}`; al arrancar, si hay token
     -> `GET /auth/sesion` (401 -> limpia y `anonymous`); `login()` guarda token y perfil; `logout()`
@@ -391,7 +391,7 @@ Commit de fase: `SPEC-008: frontend de sesion, overlay de login y gestion de usu
     sin desmontar `NavContext` ni la vista actual: la navegacion en estado se conserva (RF-13,
     CA-12).
 
-- [ ] T-33 (RF-08, RF-14, CA-08, CA-09) Pantalla de gestion de usuarios y visibilidad ADMIN
+- [x] T-33 (RF-08, RF-14, CA-08, CA-09) Pantalla de gestion de usuarios y visibilidad ADMIN
   - Nuevo `frontend/src/features/users/UsersPage.tsx`: tabla (usuario, nombre, roles, activo,
     intentos/fallo de bloqueo) + formularios de alta y edicion con los componentes `ui` existentes
     (`Input`, `Select`, `Button`, `Badge`); exito/error con el envelope; la edicion muestra el aviso
@@ -403,7 +403,7 @@ Commit de fase: `SPEC-008: frontend de sesion, overlay de login y gestion de usu
     `AppView { name: "users" }`/`SidebarKey`; el elemento "Gestion de usuarios" solo se renderiza si
     `roles` incluye `ADMIN` (el backend rechaza igual con 403).
 
-- [ ] T-34 (RF-14, CA-12) Re-autenticacion sin perder trabajo y acciones condicionadas a roles
+- [x] T-34 (RF-14, CA-12) Re-autenticacion sin perder trabajo y acciones condicionadas a roles
   - Tras re-autenticarse desde el overlay: reintenta el `flush()` pendiente de
     `frontend/src/hooks/useAutosave.ts` (el borrador en memoria apunta a la misma version) y la
     vista se refresca desde la BD; el borrador persistido no depende de la sesion (CA-12).
@@ -412,7 +412,7 @@ Commit de fase: `SPEC-008: frontend de sesion, overlay de login y gestion de usu
   - `frontend/src/features/wizard/DocumentActions.tsx`: acciones de la matriz visibles condicionadas
     a roles (p. ej. "Generar DOCX/PDF" solo con AUTORIZO/ADMIN); el servidor es quien enforce.
 
-- [ ] T-35 (RF-14, CA-08, CA-12) e2e de autenticacion (Playwright)
+- [x] T-35 (RF-14, CA-08, CA-12) e2e de autenticacion (Playwright)
   - `frontend/e2e/support/backend.ts`: mocks nuevos de `POST /auth/login`, `GET /auth/sesion`,
     `POST /auth/logout` y de `/usuarios`; los mocks existentes de `/api/v1` deben responder con
     envelope `unauthenticated` cuando el test lo simule.
@@ -426,13 +426,13 @@ Commit de fase: `SPEC-008: frontend de sesion, overlay de login y gestion de usu
 
 Commit de fase: `SPEC-008: verificacion final (calidad, integracion y e2e)`
 
-- [ ] T-36 (RF-10, RF-11, RF-12, CA-10, CA-11) Integracion completa con Docker + Testcontainers
+- [x] T-36 (RF-10, RF-11, RF-12, CA-10, CA-11) Integracion completa con Docker + Testcontainers
   - Desde `backend/` (ver `AGENTS.md`): `python -m pytest -m integration tests/integration` en
     verde: migracion `0004` + semilla `ADMIN` autenticable (T-11), repositorio de usuarios (T-12),
     repositorio de auditoria con `motivo` en `DETALLE` (T-13) y las pruebas de migracion existentes
     con el fixture autouse.
 
-- [ ] T-37 (RF-15, CA-15, CA-16) Lint, tipos y unitarias backend
+- [x] T-37 (RF-15, CA-15, CA-16) Lint, tipos y unitarias backend
   - Desde `backend/`: `ruff check .`, `mypy --strict app` y `python -m pytest` en verde; la app y
     las pruebas de auth corren con `AI_PROVIDER=none` (CA-15); `GET /openapi.json` expone los
     endpoints nuevos con las columnas 401/403.

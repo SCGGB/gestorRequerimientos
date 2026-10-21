@@ -1,4 +1,4 @@
-# API - requerimientos, validación y transiciones (SPEC-003 / SPEC-005 / SPEC-006 / SPEC-007)
+# API - requerimientos, validación, transiciones y autenticación (SPEC-003 / SPEC-005 / SPEC-006 / SPEC-007 / SPEC-008)
 
 ## Prefijo
 
@@ -22,6 +22,13 @@ Códigos por tipo:
 
 | Excepción | HTTP | code |
 |---|---|---|
+| `NotAuthenticatedError` | 401 | `unauthenticated` |
+| `InvalidCredentialsError` | 401 | `invalid_credentials` |
+| `AccountLockedError` | 401 | `account_locked` |
+| `AccessDeniedError` | 403 | `forbidden` |
+| `UserNotFoundError` | 404 | `user_not_found` |
+| `UsernameTakenError` | 409 | `username_taken` |
+| `SelfDeactivationError` | 409 | `self_deactivation_not_allowed` |
 | `InvalidStateTransitionError` | 409 | `invalid_state_transition` |
 | `AuthorizationNotOnCurrentVersionError` | 409 | `authorization_not_on_current_version` |
 | `MultipleWorkingVersionsError` | 409 | `multiple_working_versions` |
@@ -42,7 +49,78 @@ Códigos por tipo:
 
 Los campos `details` pueden incluir el detalle de validación (`RequestValidationError.errors()`) cuando aplica.
 
+## Autorización por endpoint (SPEC-008)
+
+Todos los endpoints de `/api/v1` exigen sesión válida (401 sin token, token inválido o expirado) salvo los marcados
+como públicos. Además, cada endpoint aplica la matriz de roles del plan: **403** con envelope y **sin efectos
+persistidos** cuando el rol no corresponde. `/health` y `/version` permanecen públicos (fuera de `/api/v1`).
+
+Leyenda de roles: `E`=ELABORO, `R`=REVISO, `A`=AUTORIZO, `AD`=ADMIN. "todos" = cualquier usuario autenticado
+(unión de permisos). El orden de enforcement es **401 → 403 → reglas de negocio** (400/404/409).
+
+| Método | Ruta | Roles requeridos |
+|---|---|---|
+| GET | `/health`, `/version` | pública |
+| POST | `/auth/login` | pública |
+| POST | `/auth/logout` | todos |
+| GET | `/auth/sesion` | todos |
+| GET/POST/PATCH | `/usuarios`, `/usuarios/{id}` | AD |
+| POST | `/requerimientos` | E, AD |
+| GET | `/requerimientos` (listado), `/requerimientos/{id}` | todos |
+| GET | `/requerimientos/{id}/versiones`, `.../versiones/{vid}`, `.../versiones/{vid}/vista-previa` | todos |
+| PATCH | `/requerimientos/{id}/versiones/{vid}` (cabecera/narrativa) | E, AD |
+| POST | `/requerimientos/{id}/versiones` (congelar) | E, AD |
+| POST | `/requerimientos/{id}/versiones/{vid}/validar` | todos (dry-run, no persiste) |
+| POST | `/requerimientos/{id}/transicionar` | por `a_estado`: `EN_REVISION`→E,AD; `VALIDADO`→R,AD; `APROBADO`/`GENERADO`/`CANCELADO`→A,AD |
+| POST | `/requerimientos/{id}/estado` (legacy) | mismo criterio por estado destino que `/transicionar` |
+| POST | `/requerimientos/{id}/versiones/{vid}/firmas` | por `rol` del body: E, R o A según corresponda; **AD nunca** (403) |
+| POST/PATCH/DELETE/PUT | `/requerimientos/{id}/versiones/{vid}/{c}` y `/{c}/{itemId}`, `/{c}/orden` | E, AD |
+| POST/PATCH/DELETE/PUT | `/requerimientos/{id}/versiones/{vid}/anexos`, `/anexos/{aid}`, `/anexos/orden` | E, AD |
+| GET | `/catalogos/tipos-cambio`, `/catalogos/cargos` | todos |
+| POST | `/requerimientos/{id}/documentos` | A, AD |
+| GET | `/requerimientos/{id}/documentos` (histórico) | todos |
+| GET | `/requerimientos/{id}/documentos/{did}/descarga` | todos |
+
+Las filas dinámicas (transición por estado destino, firma por `rol` del body y autodesactivación de usuario) se
+validan en el caso de uso con el `principal` autenticado, antes de cargar o persistir; la matriz estática se aplica
+en la dependencia FastAPI.
+
 ## Catálogo de endpoints
+
+### Autenticación y usuarios (SPEC-008)
+
+| Método | Ruta | Descripción | Éxito |
+|---|---|---|---|
+| POST | `/api/v1/auth/login` | Autentica un usuario local y emite el token JWT (8 h) | 200 `LoginResponse` |
+| POST | `/api/v1/auth/logout` | Cierra sesión (audit `LOGOUT`; el token se invalida por expiración, sin denylist) | 204 |
+| GET | `/api/v1/auth/sesion` | Perfil y roles actuales del usuario autenticado | 200 `SesionResponse` |
+| GET | `/api/v1/usuarios` | Listado de usuarios con `intentos_fallidos` (para ver bloqueados) | 200 `list[UsuarioResponse]` |
+| GET | `/api/v1/usuarios/{id}` | Detalle de usuario | 200 `UsuarioResponse` |
+| POST | `/api/v1/usuarios` | Alta de usuario (solo ADMIN) | 201 `UsuarioResponse` |
+| PATCH | `/api/v1/usuarios/{id}` | Edición de usuario (solo ADMIN; reinicia `intentos_fallidos`) | 200 `UsuarioResponse` |
+
+Esquemas:
+
+- Entrada: `LoginRequest(usuario, contrasena)`; `UsuarioCreate(usuario, nombre, contrasena` con
+  `min_length=8` → `422`, `roles[]`, `activo?`); `UsuarioUpdate(nombre?, contrasena?, roles?, activo?)`.
+- Salida: `LoginResponse(token, tipo_token="Bearer", expira_en, usuario)`; `SesionResponse(id, usuario, nombre,
+  roles[], activo)`; `UsuarioResponse(id, usuario, nombre, roles[], activo, intentos_fallidos)`.
+
+Errores: `401 invalid_credentials` (mensaje único que no revela si el usuario existe), `401 account_locked`
+(bloqueo tras 5 intentos fallidos; el reinicio es manual por ADMIN), `403 forbidden`, `404 user_not_found`,
+`409 username_taken`, `409 self_deactivation_not_allowed` (un usuario no puede desactivarse a sí mismo) y
+`422 validation_error`. `logout` no invalida el token emitido: la sesión es *stateless* y la invalidación es por
+expiración de 8 h.
+
+El actor real (`principal.user_id`) sustituye a `SYSTEM` en `CREATED_BY`/`UPDATED_BY`/`GENERADO_BY` y en
+`SYS_AUDITORIA.ACTOR` en todos los flujos autenticados (RF-11). Los catálogos y datos sembrados históricamente
+conservan `SYSTEM`.
+
+Autenticación local JWT HS256 con `AuthProvider` (ADR-003): el token transporta solo identidad (`sub` = usuario,
+`roles`, `iat`, `exp`), nunca datos de negocio; en cada petición el adaptador verifica firma/expiración y recarga
+el usuario desde `SYS_USUARIO` para confirmar que sigue activo y tomar sus roles actuales (la BD es la fuente de
+verdad, por lo que los `roles` del token son informativos y no se confían). La aplicación opera sin IA
+(`AI_PROVIDER=none`). La contraseña se valida con `PBKDF2-HMAC-SHA256` (stdlib) y nunca se devuelve.
 
 ### Requerimientos
 
@@ -57,7 +135,7 @@ Los campos `details` pueden incluir el detalle de validación (`RequestValidatio
 | PATCH | `/api/v1/requerimientos/{id}/versiones/{vid}` | Editar cabecera/narrativa (solo versión de trabajo en BORRADOR) | 200 `VersionResponse` |
 | POST | `/api/v1/requerimientos/{id}/versiones` | Congelar versión de trabajo y crear sucesora (copy-on-write) | 201 `RequirementResponse` |
 | POST | `/api/v1/requerimientos/{id}/versiones/{vid}/validar` | Validación integral de la versión (dry-run, no persiste) | 200 `ValidationResultResponse` |
-| POST | `/api/v1/requerimientos/{id}/transicionar` | Transición de estado con validación integral previa (SPEC-005) | 200 `StateTransitionResponse` |
+| POST | `/api/v1/requerimientos/{id}/transicionar` | Transición de estado con validación integral previa (SPEC-005); `403` si el rol no corresponde a `a_estado` | 200 `StateTransitionResponse` |
 | POST | `/api/v1/requerimientos/{id}/estado` | Cambiar estado sin validación integral (legacy, ver nota) | 200 `RequirementResponse` |
 
 #### Validación y transición (SPEC-005)
@@ -66,17 +144,21 @@ Los campos `details` pueden incluir el detalle de validación (`RequestValidatio
   `200` con `valido=false` y la lista de errores si la versión no cumple (no es un error HTTP). Body opcional
   `{ "a_estado": "GENERADO" }` para evaluar además las precondiciones de esa transición. Si `a_estado` no es un
   estado válido, responde `200` con `valido=false` y el error `unknown_target_state` (no es `422`).
-- `POST /requerimientos/{id}/transicionar` recibe `{ a_estado, motivo?, actor_id? }`. Si la transición no está
+- `POST /requerimientos/{id}/transicionar` recibe `{ a_estado, motivo? }`. Si la transición no está
   permitida o falla la validación integral, responde **`400`** con el cuerpo `StateTransitionResponse`
   (`transicion_valida=false` y `errores[]`); en éxito responde `200` con el mismo esquema. Este `400` **no**
   usa el envelope global, porque el contrato exige simultáneamente el código `400`, `transicion_valida=false`
   y el detalle por sección/campo.
+- **Cambio de contrato (SPEC-008)**: se eliminó el campo `actor_id` del body. El actor es siempre la identidad
+  autenticada (RF-17); un consumidor que aún envíe `actor_id` no recibe `422` (Pydantic ignora campos extra), pero
+  el campo desapareció del contrato y de OpenAPI.
 - Códigos dentro de `errores[]`: `unknown_target_state`, `invalid_transition`, `required_field`,
   `min_active_items`, `future_requirements_missing`, `signatures_missing`.
 - El control documental (`signers.ELABORO.nombre` y `signers.AUTORIZO.nombre`) se exige solo como
   precondición de `APROBADO→GENERADO`; el dry-run base no exige firmas.
-- `motivo` y `actor_id` se aceptan y se registran en log, pero **no se persisten** (no existe historial de
-  transiciones; deuda documentada para una spec de auditoría futura).
+- El `motivo` se persiste en `SYS_AUDITORIA.DETALLE` (JSON) junto con `estado_anterior`/`estado_actual` de la
+  entrada `STATE_TRANSITION` (CA-11). El `actor_id` se eliminó; el actor real (`ACTOR` y `CREATED_BY`) es la
+  identidad autenticada. No existe un historial de transiciones como tabla/pantalla (fuera de alcance de SPEC-008).
 - No hay cambios de modelo Oracle ni migraciones: el estado ya vive en `REQ_REQUERIMIENTO.ESTADO`.
 
 `POST /requerimientos/{id}/estado` se conserva como **alias legacy** con su contrato original; mantiene el
@@ -106,7 +188,7 @@ Los campos `details` pueden incluir el detalle de validación (`RequestValidatio
 
 | Método | Ruta | Descripción | Éxito |
 |---|---|---|---|
-| POST | `/api/v1/requerimientos/{id}/documentos` | Genera DOCX y PDF de la versión vigente (o `version_id` opcional en el body) y registra ambos | 201 `list[GeneratedDocumentResponse]` |
+| POST | `/api/v1/requerimientos/{id}/documentos` | Genera DOCX y PDF de la versión vigente (o `version_id` opcional en el body) y registra ambos; `403` sin rol A/AD | 201 `list[GeneratedDocumentResponse]` |
 | GET | `/api/v1/requerimientos/{id}/documentos` | Histórico completo de documentos generados, sin binario | 200 `list[GeneratedDocumentResponse]` |
 | GET | `/api/v1/requerimientos/{id}/documentos/{did}/descarga` | Descarga el binario del documento | 200 binario |
 
@@ -143,7 +225,7 @@ Recursos `{c}`: `objetivos`, `consideraciones`, `beneficios`, `restricciones`, `
 
 | Método | Ruta | Descripción | Éxito |
 |---|---|---|---|
-| POST | `/api/v1/requerimientos/{id}/versiones/{vid}/firmas` | Registrar firma | 201 `SignatureResponse` |
+| POST | `/api/v1/requerimientos/{id}/versiones/{vid}/firmas` | Registrar firma; `403` si el rol no corresponde al `rol` del body (ADMIN nunca firma) | 201 `SignatureResponse` |
 
 #### Política de firmas (ADR-007)
 
@@ -181,8 +263,8 @@ Los anexos son registrados únicamente como metadato (`nombre`, `tipo_mime`, `or
 
 ## Esquemas principales (resumen)
 
-- Entrada: `RequirementCreate`, `VersionUpdate`, `NewVersionRequest`, `StatusChangeRequest`, `SignatureCreate`, `CollectionItemCreate`, `BenefitCreate`, `CollectionItemUpdate`, `ReorderRequest`, `AttachmentCreate`, `AttachmentUpdate`, `ValidationRequest`, `StateTransitionRequest`, `GenerateDocumentsRequest`.
-- Salida: `RequirementResponse`, `RequirementSummary`, `RequirementPage`, `VersionResponse`, `CollectionItemResponse`, `BenefitResponse`, `SignatureResponse`, `AttachmentResponse`, `ChangeTypeResponse`, `PositionResponse`, `ValidationErrorSchema`, `ValidationResultResponse`, `StateTransitionResponse`, `PreviewDocumentResponse` (+ `PreviewSectionResponse`, `PreviewBlockResponse`, `PreviewVersionRowResponse`, `PreviewFirmasResponse`, `PreviewSignerResponse`), `GeneratedDocumentResponse`.
+- Entrada: `RequirementCreate`, `VersionUpdate`, `NewVersionRequest`, `StatusChangeRequest`, `SignatureCreate`, `CollectionItemCreate`, `BenefitCreate`, `CollectionItemUpdate`, `ReorderRequest`, `AttachmentCreate`, `AttachmentUpdate`, `ValidationRequest`, `StateTransitionRequest`, `GenerateDocumentsRequest`, `LoginRequest`, `UsuarioCreate`, `UsuarioUpdate`.
+- Salida: `RequirementResponse`, `RequirementSummary`, `RequirementPage`, `VersionResponse`, `CollectionItemResponse`, `BenefitResponse`, `SignatureResponse`, `AttachmentResponse`, `ChangeTypeResponse`, `PositionResponse`, `ValidationErrorSchema`, `ValidationResultResponse`, `StateTransitionResponse`, `PreviewDocumentResponse` (+ `PreviewSectionResponse`, `PreviewBlockResponse`, `PreviewVersionRowResponse`, `PreviewFirmasResponse`, `PreviewSignerResponse`), `GeneratedDocumentResponse`, `LoginResponse`, `SesionResponse`, `UsuarioResponse`.
 
 `GeneratedDocumentResponse` (metadatos, nunca el binario): `id`, `formato` (`DOCX` | `PDF`), `version_id`,
 `plantilla_version`, `nombre_archivo`, `mime_type`, `tamano_bytes`, `generado_at` y `generado_by`.
@@ -192,3 +274,9 @@ Los anexos son registrados únicamente como metadato (`nombre`, `tipo_mime`, `or
 ## Referencia OpenAPI
 
 La especificación OpenAPI está disponible en `/openapi.json`. El contrato de errores y todos los endpoints arriba listados se corresponden con lo expuesto allí.
+
+El esquema documenta en cada endpoint las respuestas del envelope: `401` en todos los endpoints de `/api/v1`
+(con `unauthenticated`, o `invalid_credentials`/`account_locked` en `POST /auth/login`), `403` (`forbidden`) en los
+endpoints con restricción de rol, y `404`/`409` donde aplica (p. ej. `user_not_found`, `username_taken`,
+`self_deactivation_not_allowed` en `/usuarios`). Todas referencian el esquema `ErrorResponse` e incluyen un ejemplo
+por código de error.

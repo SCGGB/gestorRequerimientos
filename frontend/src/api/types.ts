@@ -171,6 +171,56 @@ export interface PositionResponse {
   activo: boolean;
 }
 
+/* ---- Autenticacion y usuarios (SPEC-008) ---- */
+
+export type Role = "ELABORO" | "REVISO" | "AUTORIZO" | "ADMIN";
+
+export interface LoginResponse {
+  token: string;
+  tipo_token: string;
+  expira_en: number;
+  usuario: string;
+}
+
+export interface SesionResponse {
+  id: number;
+  usuario: string;
+  nombre: string;
+  roles: Role[];
+  activo: boolean;
+}
+
+export interface Usuario {
+  id: number;
+  usuario: string;
+  nombre: string;
+  roles: Role[];
+  activo: boolean;
+  intentos_fallidos: number;
+}
+
+export interface UsuarioCreatePayload {
+  usuario: string;
+  nombre: string;
+  contrasena: string;
+  roles: Role[];
+  activo: boolean;
+}
+
+export interface UsuarioUpdatePayload {
+  nombre?: string;
+  contrasena?: string;
+  roles?: Role[];
+  activo?: boolean;
+}
+
+export const ROLE_LABELS: Record<Role, string> = {
+  ELABORO: "Elaboro",
+  REVISO: "Reviso",
+  AUTORIZO: "Autorizo",
+  ADMIN: "Administrador",
+};
+
 /* ---- Payloads de entrada ---- */
 
 export interface RequirementCreatePayload {

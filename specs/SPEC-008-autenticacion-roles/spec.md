@@ -19,7 +19,7 @@ El objetivo de esta spec es: autenticar al usuario, aplicar autorizacion por rol
 
 - Autenticacion local de usuarios administrados por la aplicacion, conforme a ADR-003, tras el puerto `AuthProvider`; sesion/token JWT (8 horas, sin refresh) que el frontend adjunta a cada peticion.
 - Identidad autenticada (usuario y conjunto de roles) disponible para los casos de uso, sustituyendo al stub `Principal` de SPEC-003; permisos por union de los roles del usuario.
-- Autorizacion por rol sobre todos los endpoints de `/api/v1` (lectura y escritura): rechazo `401` sin sesion valida y `403` sin el permiso requerido, con error estructurado y sin efectos persistidos; solo `/health` y `/version` permanecen publicos.
+- Autorizacion por rol sobre todos los endpoints de `/api/v1` (lectura y escritura): rechazo `401` sin sesion valida y `403` sin el permiso requerido, con error estructurado y sin efectos persistidos; solo `/health`, `/version` y `POST /auth/login` permanecen publicos.
 - Matriz de autorizacion rol-accion, definida en esta spec (ver Reglas de negocio), aplicada a endpoints, transiciones de estado (ADR-005), captura de firmas (sin alterar ADR-007) y generacion/descarga de documentos (responsabilidad diferida por SPEC-007).
 - Gestion de usuarios (alta, baja, edicion de credenciales y roles asignados) exclusivamente por `ADMIN`, por API y por pantalla propia; el `ADMIN` no puede desactivarse a si mismo; bloqueo automatico tras 5 intentos fallidos de login con reinicio manual por `ADMIN`.
 - Semilla del primer usuario `ADMIN` en la migracion Alembic base, con credenciales provenientes de variables de entorno (fuera de imagenes y de git).
@@ -48,7 +48,7 @@ El objetivo de esta spec es: autenticar al usuario, aplicar autorizacion por rol
 
 - RF-01. El sistema autentica usuarios locales administrados por la aplicacion conforme a ADR-003, a traves del puerto `AuthProvider`; la autenticacion esta disponible sin ningun servicio de IA.
 - RF-02. El sistema reconoce los roles del MVP: `ELABORO`, `REVISO`, `AUTORIZO` y `ADMIN` (ADR-003); un usuario puede ostentar varios roles simultaneamente y su permiso es la union de los permisos de todos ellos.
-- RF-03. Todo endpoint bajo `/api/v1` (lectura y escritura) exige una sesion valida; sin token valido o con token expirado responde `401` con error estructurado y no ejecuta la operacion. `/health` y `/version` permanecen publicos.
+- RF-03. Todo endpoint bajo `/api/v1` (lectura y escritura) exige una sesion valida; sin token valido o con token expirado responde `401` con error estructurado y no ejecuta la operacion. Permanecen publicos `/health`, `/version` y `POST /auth/login` (punto de entrada de la autenticacion, sin el cual no se podria obtener una sesion).
 - RF-04. La matriz de autorizacion por rol y accion/endpoint (definida en esta spec) rige toda operacion; un usuario autenticado sin el permiso requerido recibe `403` con error estructurado y la operacion no produce ningun efecto persistido.
 - RF-05. Las transiciones de estado se ejecutan unicamente mediante usuarios autenticados con el rol que asigna la matriz segun ADR-005; un usuario sin ese rol obtiene `403` y el estado del requerimiento no cambia.
 - RF-06. La captura de firmas se sujeta a la matriz: cada rol registra unicamente la firma que le corresponde (`ELABORO` firma Elaboro, `REVISO` firma Reviso, `AUTORIZO` firma Autorizo) y `ADMIN` no registra firmas; sin alterar la politica ADR-007: solo en estados `APROBADO`/`GENERADO` y sobre la version vigente.

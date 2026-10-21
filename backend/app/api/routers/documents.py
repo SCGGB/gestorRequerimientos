@@ -10,6 +10,7 @@ from app.api.dependencies import (
     get_list_documents_use_case,
     require_action,
 )
+from app.api.openapi import FORBIDDEN_RESPONSE, UNAUTHENTICATED_RESPONSE
 from app.api.schemas.document import (
     GeneratedDocumentResponse,
     GenerateDocumentsRequest,
@@ -28,6 +29,7 @@ router = APIRouter(
     prefix="/api/v1",
     tags=["documentos"],
     dependencies=[Depends(get_current_principal)],
+    responses={401: UNAUTHENTICATED_RESPONSE},
 )
 
 
@@ -35,6 +37,7 @@ router = APIRouter(
     "/requerimientos/{requirement_id}/documentos",
     response_model=list[GeneratedDocumentResponse],
     status_code=status.HTTP_201_CREATED,
+    responses={403: FORBIDDEN_RESPONSE},
 )
 def generate_documents(
     requirement_id: int,

@@ -11,6 +11,7 @@ from app.api.dependencies import (
     get_update_attachment_use_case,
     require_action,
 )
+from app.api.openapi import FORBIDDEN_RESPONSE, UNAUTHENTICATED_RESPONSE
 from app.api.schemas.attachment import AttachmentCreate, AttachmentUpdate
 from app.api.schemas.collection import ReorderRequest
 from app.api.schemas.requirement import AttachmentResponse
@@ -28,6 +29,7 @@ router = APIRouter(
     prefix="/api/v1",
     tags=["anexos"],
     dependencies=[Depends(get_current_principal)],
+    responses={401: UNAUTHENTICATED_RESPONSE, 403: FORBIDDEN_RESPONSE},
 )
 
 
