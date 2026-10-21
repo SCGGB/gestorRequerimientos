@@ -1,8 +1,30 @@
 # Verificacion - SPEC-008-autenticacion-roles
 
-| Criterio | Resultado | Evidencia |
+Base de comparacion: `f2587cb` (commit previo al inicio de SPEC-008, `f0c8d31`).
+
+## Resultado por criterio de aceptacion
+
+| CA | Resultado | Evidencia |
 |---|---|---|
-| CA-01 | Cumple / Parcial / No cumple | archivo, prueba o comando |
+| CA-01 | **Cumple** | Token de 8 h con los roles actuales: `tests/domain/test_session.py` (2), `tests/infrastructure/test_jwt_token_service.py` (6, round-trip y expiracion = `SESSION_TTL`), `tests/application/test_authenticate_user.py` (7), `tests/api/test_auth.py` (7, login 200). `Settings.jwt_ttl_hours = 8` (`config.py:26`). |
+| CA-02 | **Cumple** | Mensaje unico que no revela existencia: `tests/application/test_authenticate_user.py` (credenciales malas/inexistentes), `tests/api/test_auth.py` (401 `invalid_credentials`). `InvalidCredentialsError` en `application/errors.py`. |
+| CA-03 | **Cumple** | 401 con envelope sin token / token invalido / token expirado: `tests/api/test_auth_enforcement.py` (10); rechazo de firma falsa, `alg` distinto de `HS256` y `exp` vencido en `tests/infrastructure/test_jwt_token_service.py` (6). `401` declarado en OpenAPI (`api/openapi.py`, `tests/api/test_openapi.py` 5). |
+| CA-04 | **Cumple** | 403 con envelope y sin cambios persistidos: `tests/api/test_auth_enforcement.py` (10), `tests/domain/test_authorization.py` (11, matriz por accion), `AccessDeniedError` mapeado a 403 en `api/errors.py`. |
+| CA-05 | **Cumple** | Transicion por rol del estado destino, 403 antes de persistir: `tests/domain/test_authorization.py`, `tests/api/test_transition.py` (9). |
+| CA-06 | **Cumple** | Firma solo por el rol correspondiente; `ADMIN` nunca: `tests/domain/test_authorization.py` (`ensure_signature_allowed`), `tests/application/test_requirement_use_cases.py` (rol ajeno y `ADMIN` -> 403 sin persistir). |
+| CA-07 | **Cumple** | Generacion de documentos restringida a `AUTORIZO`/`ADMIN`: `tests/api/test_auth_enforcement.py`; `403` declarado en `POST .../documentos` (`api/openapi.py`). |
+| CA-08 | **Cumple** | Gestion de usuarios solo `ADMIN`; autodesactivacion rechazada: `tests/api/test_users.py` (9), `tests/application/test_manage_users.py` (8), `tests/domain/test_user.py` (6), `tests/integration/test_user_repository.py` (5), `frontend/e2e/auth.spec.ts` (pantalla de usuarios visible solo para `ADMIN`). |
+| CA-09 | **Cumple** | Bloqueo al 5to intento y reinicio por edicion: `tests/domain/test_user.py` (6), `tests/application/test_authenticate_user.py`, `tests/application/test_manage_users.py`, `tests/api/test_users.py` (reinicio por `PATCH`), `tests/integration/test_user_repository.py`. |
+| CA-10 | **Cumple** | Migracion `0004` crea `SYS_USUARIO`/`SYS_USUARIO_ROL` y siembra un `ADMIN` autenticable: `tests/integration/test_migration_autenticacion.py` (4) en la corrida de integracion con Oracle real (37 passed). |
+| CA-11 | **Cumple** | Actor real y auditoria con `motivo` en `DETALLE`: `tests/integration/test_audit_repository.py` (2), `tests/application/test_auth_audit.py` (7), `tests/api/test_transition.py` (9). `SYS_AUDITORIA.ACTOR` = identidad autenticada (actor real sustituye a `SYSTEM`). |
+| CA-12 | **Cumple** | Overlay de login sin desmontar la vista y borrador persistido conservado: `frontend/e2e/auth.spec.ts` ("401 simulado abre el overlay y tras re-autenticar conserva el borrador"), `frontend/src/auth/AuthContext.tsx`, `frontend/src/auth/LoginOverlay.tsx`. |
+| CA-13 | **Cumple** | `/health` y `/version` publicas (200 sin token) y `POST /auth/login` publica: `tests/api/test_auth_enforcement.py`; `401` a nivel de router en todo `/api/v1` y ausente en `/health`/`/version` (`api/openapi.py`, `tests/api/test_openapi.py`). |
+| CA-14 | **Cumple** | Union de permisos con dos roles: `tests/domain/test_authorization.py` (`ensure_authorized` con union), `tests/api/test_auth_enforcement.py`; `RequiredRoles` sin herencia implicita (`domain/auth/authorization.py`). |
+| CA-15 | **Cumple** | La aplicacion opera sin IA: `AI_PROVIDER=none` -> **272 passed**, 37 deselected; `create_app()` sin proveedor de IA; 0 coincidencias de cliente de IA en `backend/app`. Detalle en "Sin IA (CA-15)". |
+| CA-16 | **Cumple** | Calidad completa en verde: `ruff check .`, `mypy --strict app`, **272 passed** (unitarias), **37 passed** (integracion con Oracle real), `npm run build` y **28 passed** (e2e). Detalle en las secciones de T-36, T-37 y T-38. |
+
+**Conclusion:** los 16 criterios de aceptacion se cumplen. Sin pendientes de la spec (las dos
+observaciones DC-04 y DC-05 son deuda menor ya registrada y no bloquean ningun CA).
 
 ## Verificacion de coherencia documental (doc/technical/api.md <-> implementacion)
 
@@ -88,6 +110,84 @@ Nuevo `backend/tests/api/test_openapi.py` (5 pruebas) como regresion: endpoints 
 `/api/v1`, `403` en los endpoints con restriccion de rol, `401` del login con `invalid_credentials`/`account_locked`
 y `ErrorResponse` registrado en `components.schemas`.
 
+## Build frontend y e2e (T-38)
+
+Comandos (desde `frontend/`):
+
+| Comando | Resultado |
+|---|---|
+| `npm run build` (`tsc -b && vite build`) | PASSED - sin errores de tipos; `vite v7.3.7`, 94 modulos transformados, `dist/assets/index-DGCsU81Y.js` 292.10 kB (gzip 87.45 kB) y `dist/assets/index-CiBqznrS.css` 23.10 kB (gzip 5.23 kB) |
+| `npm run test:e2e` (Playwright, chromium) | **28 passed** (23.1 s), 0 skipped, 0 failed |
+| `npm run test:e2e` (segunda corrida, detector de instabilidad) | **28 passed** (10.9 s) |
+
+Detalle de la suite e2e (T-35, `frontend/e2e/`):
+
+| Archivo | Pruebas | Alcance |
+|---|---|---|
+| `auth.spec.ts` | 6 | sin sesion -> overlay de login (CA-12); credenciales invalidas con mensaje legible; 401 simulado -> overlay -> re-autenticacion conservando el borrador persistido (CA-12); 403 -> acceso denegado sin perder el wizard (RF-14); gestion de usuarios visible y operable solo para ADMIN (CA-08) |
+| `layout.spec.ts` | 4 | layout base, navegacion en la barra lateral, vista de overview, humo de proxy con rutas relativas `/api/v1` (suite adaptada con semilla de sesion) |
+| `wizard.spec.ts` | 18 | pasos 1-13 del asistente (validaciones, colecciones, beneficios, contexto, requisitos futuros, control documental, revision, vista previa, autosave, impresion, generacion y descarga de DOCX/PDF) con sesion sembrada al inicio |
+
+Notas:
+
+- La suite e2e corre contra el servidor de desarrollo de Vite (`webServer` en `playwright.config.ts`,
+  `npm run dev -- --port 5173`) con el backend simulado por `e2e/support/backend.ts` (mocks de
+  `/auth/login`, `/auth/sesion`, `/auth/logout` y `/usuarios`, y envelope `unauthenticated` cuando el
+  test lo simula).
+- `playwright.config.ts` no define `retries` fuera de CI (`retries: process.env.CI ? 2 : 0`), por lo
+  que las dos corridas anteriores son sin reintentos: no hay cobertura de reintentos ocultando fallos.
+- `dist/`, `playwright-report/` y `test-results/` estan en `frontend/.gitignore`: la corrida no deja
+  artefactos versionables.
+
+## Verificacion de alcance (T-39)
+
+Comparacion contra `f2587cb` (commit previo al inicio de SPEC-008).
+
+### RF-15 - Sin dependencias nuevas
+
+| Archivo | Resultado | Evidencia |
+|---|---|---|
+| `backend/pyproject.toml` | **Sin cambios** | `git diff f2587cb -- backend/pyproject.toml` vacio. Dependencias: `fastapi`, `uvicorn`, `pydantic`, `pydantic-settings`, `sqlalchemy`, `alembic`, `oracledb`, `docxtpl` (dev: `ruff`, `mypy`, `pytest`, `pytest-cov`, `httpx`, `testcontainers`). Sin `pyjwt`, `python-jose`, `passlib`, `bcrypt`, `argon2` ni `cryptography`. |
+| `frontend/package.json` | **Sin cambios** | `git diff f2587cb -- frontend/package.json` vacio. Dependencias: `react`, `react-dom` (dev: vite, tailwind, typescript, playwright). |
+| `frontend/package-lock.json` | **Sin cambios** | `git diff --stat f2587cb -- frontend/package-lock.json` vacio: no se instalo nada nuevo en el frontend. |
+
+JWT y hashing se implementan **solo con stdlib**, tal como decisiono el plan:
+
+- `infrastructure/adapters/jwt_token_service.py`: `base64`, `hashlib`, `hmac`, `json`, `datetime`.
+- `infrastructure/adapters/password_hasher.py`: `base64`, `hashlib`, `hmac`, `secrets` (PBKDF2-HMAC-SHA256).
+- Busqueda de `import|from` de `jwt|passlib|bcrypt|jose|authlib|oauthlib|itsdangerous|argon2|cryptography|pyjwt` en
+  todo `backend/app`: **0 coincidencias**.
+
+### RF-16 - Docker, secretos y configuracion
+
+| Chequeo | Resultado | Evidencia |
+|---|---|---|
+| `docker-compose.yml` sin cambios de servicios | PASSED | `git diff f2587cb -- docker-compose.yml` vacio. Sigue con 4 servicios (`oracle`, `rustfs`, `backend`, `frontend`) y 2 volumenes; `backend` conserva `env_file: .env` (`required: false`), por lo que `SEED_ADMIN_*`, `JWT_SECRET`, `JWT_TTL_HOURS`, `PASSWORD_MIN_LENGTH` y `LOGIN_MAX_FAILED_ATTEMPTS` fluyen automaticamente sin tocar el compose. |
+| `docker/` (Dockerfiles) sin cambios | PASSED | `git diff --stat f2587cb -- docker/` vacio. `backend.Dockerfile`, `backend-dev.Dockerfile`, `backend-integration.Dockerfile`, `frontend.Dockerfile` y `frontend.nginx.conf` intactos. |
+| Sin secretos en imagenes | PASSED | Busqueda de `SEED_ADMIN|JWT_SECRET|PASSWORD=|SECRET=|TOKEN=|wallet` en todos los archivos de `docker/`: **0 coincidencias**. El wallet de Oracle se monta como volumen (`ORACLE_WALLET_DIR` en `.env.example`), nunca en la imagen. |
+| Secretos fuera de git | PASSED | `.env` esta en `.gitignore` (raiz) y no esta trackeado; el unico archivo de entorno versionado es `.env.example`. `git ls-files` solo devuelve `.env.example`. |
+| `.env.example` con aviso de secretos | PASSED | Seccion nueva (T-06) con `JWT_SECRET`, `SEED_ADMIN_USERNAME`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_NOMBRE`, `JWT_TTL_HOURS`, `PASSWORD_MIN_LENGTH`, `LOGIN_MAX_FAILED_ATTEMPTS` y el aviso explicito "SECRETO: solo en `.env`, nunca en imagenes ni en git". Unica modificacion fuera de `backend/` y `frontend/` (`.env.example`: +9 lineas). |
+| Sin default implicito de credenciales | PASSED | `alembic/versions/0004_usuarios_autenticacion.py:41-45`: si faltan `SEED_ADMIN_USERNAME` o `SEED_ADMIN_PASSWORD` la migracion falla con error en espanol; no hay default silencioso. La insercion usa parametros bound (`:username`, `:password_hash`), el secreto nunca via f-string. |
+| Una sola implementacion de hashing | PASSED | La migracion `0004` reusa `Pbkdf2PasswordHasher` (`0004_usuarios_autenticacion.py:35,47-48`): no hay un segundo algoritmo de derivacion de claves. |
+
+### RF-18 - `AuthProvider` como punto de extension (sustituible por OIDC sin tocar el dominio)
+
+| Chequeo | Resultado | Evidencia |
+|---|---|---|
+| `ports/auth.py` sin cambios de firma | PASSED | `git diff f2587cb -- backend/app/application/ports/auth.py` **vacio** (byte a byte identico). `Principal(user_id: str, roles: frozenset[str])` y `AuthProvider.current_principal() -> Principal | None` intactos (SPEC-003). |
+| Dominio sin imports de JWT/OIDC | PASSED | Todos los imports de `backend/app/domain/`: solo stdlib (`collections.abc`, `dataclasses`, `datetime`, `enum`, `typing`) e imports intra-dominio (`app.domain.auth.*`, `app.domain.requirement.*`). Busqueda de `jwt|oidc|oauth|hashlib|hmac|base64|pbkdf2|token` en `domain/`: **0 coincidencias**. |
+| Dominio sin dependencias hacia application/infrastructure/api | PASSED | Busqueda de `app.(application|infrastructure|api)` en `domain/`: **0 coincidencias** (regla 12 de `AGENTS.md`, dominio puro). |
+| Sustitucion por OIDC acotada al adaptador | PASSED | El unico punto que conoce el proveedor es `infrastructure/adapters/local_auth_provider.py:54-70` (`build_auth_provider`: `local_jwt` -> `LocalJwtAuthProvider`; `oidc` -> `AuthProviderConfigurationError` con mensaje "ver ADR-003: OIDC es una fase posterior"). La API consume solo el puerto: `api/dependencies.py:341-356` (`get_auth_provider` -> `get_current_principal`). Implementar OIDC es **anadir un adaptador** que cumpla `AuthProvider`; no obliga a tocar dominio, casos de uso ni puertos. |
+| Puerto intacto en el arbol de cambios | PASSED | `backend/app/application/ports/auth.py` no aparece en `git diff --name-status f2587cb` (archivo no modificado). |
+
+### Sin IA (CA-15)
+
+| Chequeo | Resultado | Evidencia |
+|---|---|---|
+| App creada con `AI_PROVIDER=none` | PASSED | `create_app()` en la imagen `gestor-req-dev`: `ai_provider = none`, `auth_provider = local_jwt`, `jwt_ttl_hours = 8`, 15 rutas registradas, app creada sin proveedor de IA. |
+| Suite completa con `AI_PROVIDER=none` | PASSED | `AI_PROVIDER=none python -m pytest` -> **272 passed**, 37 deselected (integracion), 5 warnings. |
+| Sin cliente de IA en el codigo | PASSED | `grep -rEil 'openai|ollama|anthropic|gpt-|llm|ai_client|assistant' backend/app` -> **0 archivos**. `AI_PROVIDER` solo existe como parametro de `Settings` (`config.py:33`) y no habilita ninguna dependencia. |
+
 ## Hallazgos
 
 - DC-01, DC-02 y DC-03 (**media**) fueron **corregidos** el 2026-10-21.
@@ -96,6 +196,12 @@ y `ErrorResponse` registrado en `components.schemas`.
   describe correctamente la matriz, los endpoints, los errores y el payload del token, y `spec.md`
   ya no contradice el login publico.
 - Calidad: `ruff check .`, `mypy --strict app` y `python -m pytest` en verde (imagen `gestor-req-dev`).
+- Alcance (T-39): **sin hallazgos**. No se introdujeron dependencias nuevas (RF-15), `docker-compose.yml`
+  y los Dockerfiles no cambiaron y no contienen secretos (RF-16), `ports/auth.py` conserva su firma y el
+  dominio sigue sin imports de JWT/OIDC, por lo que el proveedor OIDC es sustituible sin tocarlo
+  (RF-18), y la aplicacion opera con `AI_PROVIDER=none` (CA-15).
+- Estado final de SPEC-008: los 39 tasks estan completados y los 16 criterios de aceptacion se
+  cumplen. La implementacion queda lista para commit de cierre de fase.
 
 ## Correcciones aplicadas (2026-10-21)
 

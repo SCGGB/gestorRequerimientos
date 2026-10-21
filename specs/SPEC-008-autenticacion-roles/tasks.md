@@ -437,11 +437,11 @@ Commit de fase: `SPEC-008: verificacion final (calidad, integracion y e2e)`
     las pruebas de auth corren con `AI_PROVIDER=none` (CA-15); `GET /openapi.json` expone los
     endpoints nuevos con las columnas 401/403.
 
-- [ ] T-38 (CA-16) Build frontend y e2e
+- [x] T-38 (CA-16) Build frontend y e2e
   - Desde `frontend/`: `npm run build` (`tsc -b` + vite) y `npm run test:e2e` en verde (suite
     adaptada + `auth.spec.ts`).
 
-- [ ] T-39 (RF-15, RF-16, RF-18, CA-15) Verificacion de alcance y evidencia para `verify.md`
+- [x] T-39 (RF-15, RF-16, RF-18, CA-15) Verificacion de alcance y evidencia para `verify.md`
   - Confirmar: `backend/pyproject.toml` y `frontend/package.json` **sin dependencias nuevas**
     (JWT/hashing con stdlib, RF-15); `docker-compose.yml` sin cambios de servicios (las variables
     nuevas fluyen por `env_file: .env`) y sin secretos en imagenes (RF-16); `ports/auth.py` sin
