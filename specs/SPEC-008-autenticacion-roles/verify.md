@@ -13,15 +13,15 @@ Base de comparacion: `f2587cb` (commit previo al inicio de SPEC-008, `f0c8d31`).
 | CA-05 | **Cumple** | Transicion por rol del estado destino, 403 antes de persistir: `tests/domain/test_authorization.py`, `tests/api/test_transition.py` (9). |
 | CA-06 | **Cumple** | Firma solo por el rol correspondiente; `ADMIN` nunca: `tests/domain/test_authorization.py` (`ensure_signature_allowed`), `tests/application/test_requirement_use_cases.py` (rol ajeno y `ADMIN` -> 403 sin persistir). |
 | CA-07 | **Cumple** | Generacion de documentos restringida a `AUTORIZO`/`ADMIN`: `tests/api/test_auth_enforcement.py`; `403` declarado en `POST .../documentos` (`api/openapi.py`). |
-| CA-08 | **Cumple** | Gestion de usuarios solo `ADMIN`; autodesactivacion rechazada: `tests/api/test_users.py` (9), `tests/application/test_manage_users.py` (8), `tests/domain/test_user.py` (6), `tests/integration/test_user_repository.py` (5), `frontend/e2e/auth.spec.ts` (pantalla de usuarios visible solo para `ADMIN`). |
+| CA-08 | **Cumple** | Gestion de usuarios solo `ADMIN`; autodesactivacion rechazada: `tests/api/test_users.py` (9), `tests/application/test_manage_users.py` (8), `tests/domain/test_user.py` (6), `tests/integration/test_user_repository.py` (5), `frontend/e2e/auth.spec.ts` (pantalla de usuarios visible solo para `ADMIN`). Ademas verificado contra el stack Docker real: item `Gestion de usuarios` ausente para `ELABORO` y `GET /usuarios` -> 403 `forbidden` (6/6 e2e reales). |
 | CA-09 | **Cumple** | Bloqueo al 5to intento y reinicio por edicion: `tests/domain/test_user.py` (6), `tests/application/test_authenticate_user.py`, `tests/application/test_manage_users.py`, `tests/api/test_users.py` (reinicio por `PATCH`), `tests/integration/test_user_repository.py`. |
 | CA-10 | **Cumple** | Migracion `0004` crea `SYS_USUARIO`/`SYS_USUARIO_ROL` y siembra un `ADMIN` autenticable: `tests/integration/test_migration_autenticacion.py` (4) en la corrida de integracion con Oracle real (37 passed). |
-| CA-11 | **Cumple** | Actor real y auditoria con `motivo` en `DETALLE`: `tests/integration/test_audit_repository.py` (2), `tests/application/test_auth_audit.py` (7), `tests/api/test_transition.py` (9). `SYS_AUDITORIA.ACTOR` = identidad autenticada (actor real sustituye a `SYSTEM`). |
-| CA-12 | **Cumple** | Overlay de login sin desmontar la vista y borrador persistido conservado: `frontend/e2e/auth.spec.ts` ("401 simulado abre el overlay y tras re-autenticar conserva el borrador"), `frontend/src/auth/AuthContext.tsx`, `frontend/src/auth/LoginOverlay.tsx`. |
+| CA-11 | **Cumple** | Actor real y auditoria con `motivo` en `DETALLE`: `tests/integration/test_audit_repository.py` (2), `tests/application/test_auth_audit.py` (7), `tests/api/test_transition.py` (9). `SYS_AUDITORIA.ACTOR` = identidad autenticada (actor real sustituye a `SYSTEM`). Verificado tambien en la base real del stack Docker (`LOGIN_SUCCESS`, `LOGIN_FAILED`, `LOGIN_BLOCKED`, `USER_CREATE`, `USER_UPDATE`, `LOGOUT` con actor real y sin contrasenas en el detalle). |
+| CA-12 | **Cumple** | Overlay de login sin desmontar la vista y borrador persistido conservado: `frontend/e2e/auth.spec.ts` ("401 simulado abre el overlay y tras re-autenticar conserva el borrador"), `frontend/src/auth/AuthContext.tsx`, `frontend/src/auth/LoginOverlay.tsx`. Verificado tambien contra el stack real: un token corrupto provoca un 401 real que abre el overlay manteniendo montada la vista de gestion de usuarios. |
 | CA-13 | **Cumple** | `/health` y `/version` publicas (200 sin token) y `POST /auth/login` publica: `tests/api/test_auth_enforcement.py`; `401` a nivel de router en todo `/api/v1` y ausente en `/health`/`/version` (`api/openapi.py`, `tests/api/test_openapi.py`). |
 | CA-14 | **Cumple** | Union de permisos con dos roles: `tests/domain/test_authorization.py` (`ensure_authorized` con union), `tests/api/test_auth_enforcement.py`; `RequiredRoles` sin herencia implicita (`domain/auth/authorization.py`). |
 | CA-15 | **Cumple** | La aplicacion opera sin IA: `AI_PROVIDER=none` -> **272 passed**, 37 deselected; `create_app()` sin proveedor de IA; 0 coincidencias de cliente de IA en `backend/app`. Detalle en "Sin IA (CA-15)". |
-| CA-16 | **Cumple** | Calidad completa en verde: `ruff check .`, `mypy --strict app`, **272 passed** (unitarias), **37 passed** (integracion con Oracle real), `npm run build` y **28 passed** (e2e). Detalle en las secciones de T-36, T-37 y T-38. |
+| CA-16 | **Cumple** | Calidad completa en verde: `ruff check .`, `mypy --strict app`, **272 passed** (unitarias), **37 passed** (integracion con Oracle real), `npm run build` y **28 passed** (e2e). Adicion: stack Docker completo (oracle + backend + frontend) con **27/27** comprobaciones de API real, **6/6** e2e de navegador real y roundtrip de migraciones `0001 -> 0004 -> base -> head`. Detalle en las secciones de T-36, T-37, T-38 y "Prueba end-to-end con Docker". |
 
 **Conclusion:** los 16 criterios de aceptacion se cumplen. Sin pendientes de la spec (las dos
 observaciones DC-04 y DC-05 son deuda menor ya registrada y no bloquean ningun CA).
@@ -188,10 +188,99 @@ JWT y hashing se implementan **solo con stdlib**, tal como decisiono el plan:
 | Suite completa con `AI_PROVIDER=none` | PASSED | `AI_PROVIDER=none python -m pytest` -> **272 passed**, 37 deselected (integracion), 5 warnings. |
 | Sin cliente de IA en el codigo | PASSED | `grep -rEil 'openai|ollama|anthropic|gpt-|llm|ai_client|assistant' backend/app` -> **0 archivos**. `AI_PROVIDER` solo existe como parametro de `Settings` (`config.py:33`) y no habilita ninguna dependencia. |
 
+## Prueba end-to-end con Docker (stack completo)
+
+Nivel 1 (API real + navegador real) y Nivel 2 (integracion) ejecutados sobre el stack de
+`docker-compose.yml`: Oracle real, FastAPI real y frontend Vite real, **sin mocks**.
+
+### Entorno
+
+| Componente | Detalle |
+|---|---|
+| `oracle` | Oracle Database Free 23ai, puerto `1521`, healthy |
+| `backend` | FastAPI + uvicorn en `8000`, healthy, imagen `docker/backend.Dockerfile` |
+| `frontend` | Vite dev server en `5173`, proxy `/api`, `/health`, `/version` -> `http://backend:8000` |
+| Volumen | recreado desde cero (`docker compose down -v`) para partir de un esquema limpio |
+| Configuracion | `.env` local (ignorado por git) con `ORACLE_PASSWORD`, `JWT_SECRET`, `SEED_ADMIN_USERNAME=admin`, `SEED_ADMIN_PASSWORD`, `AI_PROVIDER=none` |
+
+### Correccion de infraestructura requerida
+
+`docker/backend.Dockerfile` no copiaba `alembic/` ni `alembic.ini` a la imagen final, por lo que el
+contenedor `backend` no podia ejecutar las migraciones (`alembic: not found`). Correccion aplicada:
+
+```dockerfile
+COPY backend/alembic ./alembic
+COPY backend/alembic.ini ./alembic.ini
+```
+
+### Migraciones sobre el volumen limpio (roundtrip)
+
+| Paso | Resultado |
+|---|---|
+| `alembic upgrade head` | PASSED - `0001` -> `0004_usuarios_autenticacion` |
+| `alembic downgrade base` | PASSED - elimina `SYS_USUARIO_ROL` y `SYS_USUARIO` |
+| `alembic upgrade head` | PASSED - vuelve a `head` |
+
+### Nivel 1a - Smoke de API contra Oracle real
+
+Script `smoke.ps1` (temporal, fuera del repo) ejecutando `http://localhost:8000/api/v1`:
+**27/27 comprobaciones PASSED**.
+
+| Area | Comprobaciones |
+|---|---|
+| Login (CA-01, CA-02) | `POST /auth/login` 200 con `expira_en = 28800` (8 h); `GET /auth/sesion` 200 con roles; usuario inexistente y clave incorrecta devuelven el mismo envelope `invalid_credentials` (mensaje unico, sin revelar existencia) |
+| Enforcement (CA-03, CA-04) | Sin token -> 401 `unauthenticated`; token invalido -> 401; recurso ajeno -> 403 `forbidden` |
+| Gestion de usuarios (CA-08, CA-09) | Alta 201; usuario duplicado -> 409 `username_taken`; contrasena corta -> 422; 5 intentos fallidos -> 409 `account_locked`; `PATCH` reinicia `intentos_fallidos`; autodesactivacion -> 409 `self_deactivation_not_allowed`; `POST /auth/logout` 204 |
+| Endpoints publicos (CA-13) | `GET /version` responde 200 sin token |
+
+### Nivel 1b - Navegador real (Playwright sin mocks)
+
+Suite temporal ejecutada con `npx playwright test --config .tmp-real-e2e/playwright.config.ts`
+(`baseURL: http://localhost:5173`, sin `webServer`, sin mocks de `/auth/*` ni `/usuarios`):
+**6 passed**.
+
+| Prueba | Criterio | Evidencia en el stack real |
+|---|---|---|
+| Sin sesion el overlay bloquea la aplicacion pero no desmonta la vista | CA-12 | `login-overlay` visible y `Requerimientos` sigue montado por debajo |
+| Login real: el token se guarda y la sesion se valida contra el backend | CA-01, CA-13 | JWT HS256 de 3 segmentos en `localStorage`; tras recargar la sesion persiste (`GET /auth/sesion` real) y el menu `Gestion de usuarios` aparece |
+| Credenciales invalidas muestran el mensaje del envelope real | CA-02 | El overlay muestra `Usuario o contrasena incorrectos.` (mensaje unico del backend real) |
+| ADMIN: la gestion de usuarios lista, crea y edita usuarios reales | CA-08, CA-09 | Tabla con `admin`; alta con rol `Elaboro` y estado `Activo`; edicion con aviso de reinicio de intentos y cambio de nombre |
+| Un ELABORO no ve la gestion de usuarios y la API responde 403 | CA-08 | El item `Gestion de usuarios` no existe para el rol `ELABORO` y `GET /api/v1/usuarios` responde 403 `forbidden` |
+| Un token corrupto abre el overlay sin perder la vista montada | CA-12, RF-14 | `POST /usuarios` con token invalido -> 401 real -> el overlay aparece y `Gestion de usuarios` sigue montado debajo |
+
+### Nivel 2 - Integracion con Oracle real (Testcontainers)
+
+Mismo comando de la seccion T-36 (imagen `gestor-req-integration`):
+
+```
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+  -v "<ruta-absoluta>/backend:/app" -w /app \
+  -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
+  gestor-req-integration:latest \
+  sh -c "python -m pytest -m integration tests/integration -p no:cacheprovider -q"
+```
+
+Resultado: **37 passed**, 0 failed, 0 skipped, 0 errores (exit code 0).
+
+### Auditoria verificada en la base real
+
+Consultas directas a `SYS_USUARIO`, `SYS_USUARIO_ROL` y `SYS_AUDITORIA` del contenedor `oracle`:
+
+| Evidencia | Resultado | Detalle |
+|---|---|---|
+| Semilla de `ADMIN` (CA-10) | PASSED | `SYS_USUARIO`: `admin` / `Administrador`, `ACTIVO = 'S'`, hash `pbkdf2_sha256$200000$...` |
+| Roles (CA-08) | PASSED | `SYS_USUARIO_ROL`: `admin -> ADMIN`, usuario `ELABORO` -> `ELABORO` |
+| Auditoria de acceso (CA-11) | PASSED | `LOGIN_SUCCESS`, `LOGIN_FAILED` (con `motivo` e `intentos`), `LOGIN_BLOCKED`, `USER_CREATE`, `USER_UPDATE`, `LOGOUT`, siempre con `ACTOR` real |
+| Sin contrasena en la auditoria | PASSED | `USER_UPDATE` registra `{"contrasena": "cambiada"}`, nunca el valor de la clave |
+| Actor real (CA-11) | PASSED | `LOGIN_SUCCESS` con `ACTOR = e2e30904` (el propio usuario, no `SYSTEM`) |
+
 ## Hallazgos
 
 - DC-01, DC-02 y DC-03 (**media**) fueron **corregidos** el 2026-10-21.
 - DC-04 y DC-05 quedan como observaciones menores (deuda).
+- DC-06, DC-07 y DC-08 se registraron con la prueba end-to-end con Docker (ver abajo). DC-07 (no hay
+  cierre de sesion en la UI) es el unico hallazgo **funcional**; no incumple ningun CA ni RF de SPEC-008
+  (RF-14 no exige un boton de cierre de sesion), por lo que queda como tarea de una spec posterior.
 - Tras las correcciones, la coherencia documental se considera **Cumple**: `doc/technical/api.md`
   describe correctamente la matriz, los endpoints, los errores y el payload del token, y `spec.md`
   ya no contradice el login publico.
@@ -200,8 +289,11 @@ JWT y hashing se implementan **solo con stdlib**, tal como decisiono el plan:
   y los Dockerfiles no cambiaron y no contienen secretos (RF-16), `ports/auth.py` conserva su firma y el
   dominio sigue sin imports de JWT/OIDC, por lo que el proveedor OIDC es sustituible sin tocarlo
   (RF-18), y la aplicacion opera con `AI_PROVIDER=none` (CA-15).
-- Estado final de SPEC-008: los 39 tasks estan completados y los 16 criterios de aceptacion se
-  cumplen. La implementacion queda lista para commit de cierre de fase.
+- Infraestructura: `docker/backend.Dockerfile` se corrigio para incluir `alembic/` y `alembic.ini` en la
+  imagen final (sin esto el contenedor `backend` no podia migrar). No afecta al alcance de la spec.
+- Estado final de SPEC-008: los 39 tasks estan completados, los 16 criterios de aceptacion se cumplen y
+  la prueba end-to-end con Docker (Nivel 1 y Nivel 2) esta en verde. La implementacion queda lista para
+  commit de cierre de fase.
 
 ## Correcciones aplicadas (2026-10-21)
 
@@ -215,3 +307,27 @@ JWT y hashing se implementan **solo con stdlib**, tal como decisiono el plan:
 
 - DC-04: usar `PASSWORD_MIN_LENGTH` o retirarlo de `Settings`.
 - DC-05: valorar `require_action(Action.READ)`/`Action.DOWNLOAD_DOCUMENTS` para enforcement explicito.
+- DC-06: `backend/app/infrastructure/adapters/user_repository.py` fija `CREATED_BY`/`UPDATED_BY` en `"SYSTEM"`
+  para las filas de `SYS_USUARIO`. No incumple RF-11 (que aplica a las tablas de negocio `REQ_*`) ni RF-12
+  (la trazabilidad real queda en `SYS_AUDITORIA`, con `ACTOR` real verificado). Deuda menor: propagar el
+  actor autenticado hasta `SYS_USUARIO` si se requiere auditoria por fila de usuario.
+- DC-07: **no existe control de cierre de sesion en la interfaz**. `AuthContext.logout()` y
+  `POST /auth/logout` existen y funcionan (verificado en el smoke y en `SYS_AUDITORIA`), pero ningun
+  componente del frontend los invoca: la busqueda de `logout` en `frontend/src` solo devuelve
+  `api/auth.ts` y `auth/AuthContext.tsx`. Consecuencia: el usuario no puede terminar su sesion desde la
+  aplicacion; el token permanece en `localStorage` hasta que expiran las 8 h. RF-14 no exige explicitamente
+  un boton de cierre de sesion, por lo que **no es incumplimiento de la spec**, pero es un hueco funcional
+  que conviene cerrar en una spec siguiente.
+- DC-08: sin sesion, la vista de requerimientos (montada por debajo del overlay) pide `GET /requerimientos`
+  sin token y muestra el banner `Se requiere autenticacion.` detrás del overlay. El overlay cumple su
+  funcion (CA-12, RF-14) y el mensaje es legible, pero la peticion 401 es evitable y el banner queda
+  visible tras el overlay. Deuda menor de UX.
+
+### Detalle de DC-07 (evidencia)
+
+| Chequeo | Resultado |
+|---|---|
+| `logout()` en `AuthContext` | Implementado (`frontend/src/auth/AuthContext.tsx:116`), invoca `logoutRequest()` y limpia token, usuario y estado |
+| `POST /auth/logout` | 204 verificado en el smoke real y `LOGOUT` registrado en `SYS_AUDITORIA` |
+| Invocacion desde la UI | **Ninguna**: `grep -r "logout" frontend/src` solo devuelve `api/auth.ts` (cliente HTTP) y `auth/AuthContext.tsx` (contexto); ningun componente lo invoca |
+| Boton/menu de cierre de sesion | No existe en `AppLayout`, `Sidebar` ni `UsersPage` |

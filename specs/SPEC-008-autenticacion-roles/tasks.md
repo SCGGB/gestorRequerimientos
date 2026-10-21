@@ -449,6 +449,13 @@ Commit de fase: `SPEC-008: verificacion final (calidad, integracion y e2e)`
     la aplicacion opera con `AI_PROVIDER=none` (CA-15). Recopilar evidencia en
     `specs/SPEC-008-autenticacion-roles/verify.md`.
 
+- [x] T-40 (CA-08, CA-11, CA-12, CA-16) Prueba end-to-end con Docker (Nivel 1 y Nivel 2)
+  - Levantar el stack completo de `docker-compose.yml` (Oracle + backend + frontend) con volumen
+    limpio; ejecutar las migraciones `0001 -> 0004 -> base -> head` dentro del contenedor; smoke de
+    la API real contra Oracle (27/27); e2e de navegador real sin mocks (6/6); suite de integracion
+    con Testcontainers (37 passed); verificar la auditoria en la base real. Evidencia en
+    `specs/SPEC-008-autenticacion-roles/verify.md`.
+
 ## Trazabilidad CA → Tareas
 
 | CA | Tareas |
@@ -460,12 +467,12 @@ Commit de fase: `SPEC-008: verificacion final (calidad, integracion y e2e)`
 | CA-05 | T-01, T-04, T-20, T-29 |
 | CA-06 | T-01, T-04, T-21, T-29 |
 | CA-07 | T-01, T-27, T-29 |
-| CA-08 | T-01, T-02, T-04, T-12, T-15, T-18, T-24, T-26, T-28, T-33, T-35 |
+| CA-08 | T-01, T-02, T-04, T-12, T-15, T-18, T-24, T-26, T-28, T-33, T-35, T-40 |
 | CA-09 | T-02, T-04, T-12, T-16, T-18, T-28, T-33 |
 | CA-10 | T-09, T-10, T-11, T-36 |
-| CA-11 | T-03, T-13, T-19, T-20, T-22, T-23, T-29, T-30, T-36 |
-| CA-12 | T-31, T-32, T-34, T-35 |
+| CA-11 | T-03, T-13, T-19, T-20, T-22, T-23, T-29, T-30, T-36, T-40 |
+| CA-12 | T-31, T-32, T-34, T-35, T-40 |
 | CA-13 | T-27, T-29 |
 | CA-14 | T-01, T-04, T-27, T-29 |
 | CA-15 | T-23, T-37, T-39 |
-| CA-16 | T-37, T-38 |
+| CA-16 | T-37, T-38, T-40 |

@@ -39,6 +39,10 @@ COPY --from=builder /opt/venv /opt/venv
 WORKDIR /app
 COPY --chown=appuser:appuser templates ./templates
 COPY --chown=appuser:appuser backend/app ./app
+# Migraciones Alembic: necesarias para `alembic upgrade head` dentro del contenedor
+# (la semilla del usuario ADMIN de SPEC-008 vive en la migracion 0004).
+COPY --chown=appuser:appuser backend/alembic ./alembic
+COPY --chown=appuser:appuser backend/alembic.ini ./alembic.ini
 
 USER appuser
 
