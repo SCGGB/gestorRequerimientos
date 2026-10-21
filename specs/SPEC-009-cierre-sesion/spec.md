@@ -1,6 +1,6 @@
 # SPEC-009 - Cierre de sesion desde la interfaz
 
-- Estado: Borrador
+- Estado: Aprobada
 - Fecha: 2026-10-21
 - Documentos aplicables: `AGENTS.md`, `doc/product/01_SPEC_FUNCIONAL.md`, `doc/architecture/adr/003-autenticacion.md`, `doc/development/convenciones.md`, `doc/technical/api.md`, `specs/SPEC-008-autenticacion-roles/spec.md`, `specs/SPEC-008-autenticacion-roles/verify.md`
 - Depende de: SPEC-008-autenticacion-roles
